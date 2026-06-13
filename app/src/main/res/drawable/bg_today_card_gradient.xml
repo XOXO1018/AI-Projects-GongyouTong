@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 今日卡片渐变背景 -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="135"
+                android:startColor="#F17105"
+                android:endColor="#F89856" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fitsSystemWindows="true"
+    tools:context=".ui.main.MainActivity">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="100dp">
+
+            <!-- AI 助手区域 — 顶部大头像 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="40dp"
+                android:paddingBottom="20dp">
+
+                <!-- AI 头像 — 带发光环 -->
+                <FrameLayout
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:elevation="4dp">
+
+                    <View
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:background="@drawable/bg_ai_avatar_circle"/>
+
+                    <ImageView
+                        android:layout_width="88dp"
+                        android:layout_height="88dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_ai_worker"
+                        android:scaleType="centerCrop"
+                        android:clipToOutline="true"/>
+
+                    <!-- 在线状态指示 — 发光点 -->
+                    <View
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="6dp"
+                        android:background="@drawable/bg_status_dot_online"/>
+
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="蓝心智能助手"
+                    android:textColor="@color/text_primary"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="蓝心大模型为您智能安排日程、答疑解惑"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:alpha="0.85"/>
+
+            </LinearLayout>
+
+            <!-- 对话输入区域 — 精炼卡片 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/chatInputCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="4dp"
+                app:cardCornerRadius="22dp"
+                app:cardElevation="3dp"
+                app:cardBackgroundColor="@color/card_background"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/outline_variant">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 输入框 -->
+                    <EditText
+                        android:id="@+id/etInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="输入日程或向我提问，例如：明天3点去修空调"
+                        android:textSize="15sp"
+                        android:textColor="@color/text_primary"
+                        android:textColorHint="@color/text_hint"
+                        android:background="@drawable/bg_input_field_new"
+                        android:paddingHorizontal="18dp"
+                        android:paddingVertical="16dp"
+                        android:maxLines="3"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:imeOptions="actionSend"
+                        android:importantForAutofill="no"/>
+
+                    <!-- 语音识别状态提示 -->
+                    <TextView
+                        android:id="@+id/tvVoiceStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="点击🎤按钮开始语音输入"
+                        android:textColor="@color/primary"
+                        android:textSize="12sp"
+                        android:gravity="center"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="2dp"
+                        android:visibility="gone"/>
+
+                    <!-- 底部按钮行 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="12dp">
+
+                        <ImageView
+                            android:id="@+id/btnVoice"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:src="@drawable/ic_voice"
+                            android:padding="12dp"
+                            android:background="@drawable/bg_voice_light"
+                            app:tint="@color/primary"
+                            android:contentDescription="语音"/>
+
+                        <ImageView
+                            android:id="@+id/btnImage"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_image"
+                            android:padding="12dp"
+                            android:background="@drawable/bg_image_light"
+                            app:tint="@color/primary"
+                            android:contentDescription="图片生成"/>
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="蓝心大模型 · 云端运行"
+                            android:textColor="@color/text_hint"
+                            android:textSize="11sp"
+                            android:layout_marginEnd="12dp"/>
+
+                        <ImageView
+                            android:id="@+id/btnSend"
+                            android:layout_width="50dp"
+                            android:layout_height="50dp"
+                            android:src="@drawable/ic_send"
+                            android:padding="14dp"
+                            android:background="@drawable/bg_send_btn_ai"
+                            android:elevation="3dp"
+                            app:tint="@color/white"
+                            android:contentDescription="发送"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- AI 对话回复区域 -->
+            <LinearLayout
+                android:id="@+id/layoutAiReply"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="14dp"
+                android:gravity="start"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:id="@+id/ivAiAvatarSmall"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:src="@drawable/ic_ai_worker"
+                    android:scaleType="centerCrop"
+                    android:clipToOutline="true"
+                    android:layout_marginTop="4dp"
+                    android:contentDescription="AI助手"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    app:cardCornerRadius="18dp"
+                    app:cardElevation="2dp"
+                    app:cardBackgroundColor="@color/card_background"
+                    app:strokeWidth="0.5dp"
+                    app:strokeColor="@color/outline_variant">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/tvAiReply"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:lineSpacingExtra="5dp"/>
+
+                        <ImageView
+                            android:id="@+id/ivGeneratedImage"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:scaleType="centerCrop"
+                            android:adjustViewBounds="true"
+                            android:maxHeight="300dp"
+                            android:visibility="gone"
+                            android:contentDescription="生成的图片"/>
+
+                        <TextView
+                            android:id="@+id/tvAiReplyTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end"
+                            android:layout_marginTop="8dp"
+                            android:textColor="@color/text_hint"
+                            android:textSize="11sp"/>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <!-- 今日待办日程标题 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="32dp"
+                android:layout_marginHorizontal="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="今日待办"
+                    android:textColor="@color/text_primary"
+                    android:textSize="19sp"
+                    android:textStyle="bold"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:background="@drawable/bg_status_count_light">
+
+                    <View
+                        android:layout_width="7dp"
+                        android:layout_height="7dp"
+                        android:background="@drawable/bg_status_dot_pending"/>
+
+                    <TextView
+                        android:id="@+id/tvScheduleCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="0 项"
+                        android:textColor="@color/status_pending_text"
+                        android:textSize="13sp"
+                        android:textStyle="bold"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- 空状态 -->
+            <LinearLayout
+                android:id="@+id/layoutEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="52dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:src="@drawable/ic_empty_schedule"
+                    android:alpha="0.35"
+                    app:tint="@color/gray_400"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="暂无待办日程"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="18dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="使用上方蓝心大模型快速创建日程"
+                    android:textColor="@color/text_hint"
+                    android:textSize="13sp"
+                    android:layout_marginTop="8dp"/>
+
+            </LinearLayout>
+
+            <!-- 日程列表 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSchedule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:paddingHorizontal="16dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_schedule"
+                tools:itemCount="2"/>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- 加载指示器 -->
+    <FrameLayout
+        android:id="@+id/loadingView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/scrim"
+        android:visibility="gone"
+        android:clickable="true"
+        android:focusable="true">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="36dp"
+            android:background="@drawable/bg_loading_dialog"
+            android:elevation="8dp">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:indeterminate="true"
+                app:indicatorColor="@color/primary"
+                app:trackColor="@color/gray_200"
+                app:indicatorSize="44dp"
+                app:trackThickness="4dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="蓝心大模型正在解析..."
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- 底部导航 -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@color/nav_bar_background"
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@color/bottom_nav_color"
+        app:itemTextColor="@color/bottom_nav_color"
+        app:labelVisibilityMode="labeled"
+        app:elevation="8dp"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

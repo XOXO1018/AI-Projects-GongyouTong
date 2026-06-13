@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待出发徽章 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/status_pending_bg" />
+    <stroke android:width="0.5dp" android:color="@color/status_pending_dot" />
+    <corners android:radius="20dp" />
+</shape>

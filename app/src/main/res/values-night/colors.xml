@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ============================================================
+         工友通 v3 夜间模式 — 暖调深灰 + 锻钢橙 · 柔化质感
+         非纯黑，暖调层次分明，橙色调提亮提高辨识度
+         ============================================================ -->
+
+    <!-- ====== 夜间背景 ====== -->
+    <color name="background">#141210</color>
+    <color name="background_secondary">#1A1714</color>
+    <color name="surface">#1E1B18</color>
+    <color name="surface_variant">#282420</color>
+    <color name="surface_dim">#141210</color>
+
+    <!-- ====== 夜间卡片 ====== -->
+    <color name="card_background">#1E1B18</color>
+    <color name="card_background_secondary">#24211E</color>
+    <color name="card_ai_background">#261E15</color>
+    <color name="card_ai_border">#3D2E15</color>
+
+    <!-- ====== 夜间输入区 ====== -->
+    <color name="input_background">#1A1714</color>
+    <color name="input_stroke">#36312B</color>
+    <color name="input_focus_stroke">#E8680A</color>
+
+    <!-- ====== 夜间文字 ====== -->
+    <color name="text_primary">#F0EBE5</color>
+    <color name="text_secondary">#BAB1A6</color>
+    <color name="text_tertiary">#8A8076</color>
+    <color name="text_disabled">#5C554E</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_on_dark">#F0EBE5</color>
+
+    <!-- ====== 夜间分割线 ====== -->
+    <color name="divider">#2D2723</color>
+    <color name="divider_subtle">#24211E</color>
+
+    <!-- ====== 夜间导航栏 ====== -->
+    <color name="toolbar_background">#1E1B18</color>
+    <color name="nav_bar_background">#141210</color>
+    <color name="bottom_nav_active">#F07D2A</color>
+    <color name="bottom_nav_inactive">#8A8076</color>
+
+    <!-- ====== 夜间导航页 ====== -->
+    <color name="nav_page_bg">#141210</color>
+    <color name="nav_page_card">#1E1B18</color>
+    <color name="nav_page_text">#F0EBE5</color>
+    <color name="nav_page_subtext">#BAB1A6</color>
+    <color name="nav_page_accent">#F07D2A</color>
+    <color name="nav_page_divider">#2D2723</color>
+
+    <!-- ====== 状态色 (夜间提亮版) ====== -->
+    <color name="status_pending">#F59E0B</color>
+    <color name="status_pending_bg">#2D2012</color>
+    <color name="status_pending_text">#FCD34D</color>
+
+    <color name="status_in_progress">#60A5FA</color>
+    <color name="status_in_progress_bg">#152238</color>
+    <color name="status_progress_text">#93C5FD</color>
+
+    <color name="status_completed">#8A8076</color>
+    <color name="status_completed_bg">#242120</color>
+    <color name="status_completed_text">#BAB1A6</color>
+
+    <color name="status_urgent">#F87171</color>
+    <color name="status_urgent_bg">#2D1515</color>
+    <color name="status_urgent_text">#FCA5A5</color>
+
+    <!-- ====== 工单状态 (夜间版) ====== -->
+    <color name="workorder_pending">#F59E0B</color>
+    <color name="workorder_active">#60A5FA</color>
+    <color name="workorder_completed">#8A8076</color>
+    <color name="workorder_exception">#F87171</color>
+    <color name="workorder_tag_bg">#2D2012</color>
+    <color name="workorder_active_tag_bg">#152238</color>
+    <color name="workorder_completed_tag_bg">#242120</color>
+    <color name="workorder_exception_tag_bg">#2D1515</color>
+
+    <!-- ====== AI 专用色 ====== -->
+    <color name="ai_accent">#F07D2A</color>
+    <color name="ai_gradient_start">#E8680A</color>
+    <color name="ai_gradient_end">#FFB585</color>
+    <color name="ai_cyan">#22D3EE</color>
+    <color name="ai_glow">#30E8680A</color>
+
+    <!-- ====== 风险等级 (夜间版) ====== -->
+    <color name="risk_high">#F87171</color>
+    <color name="risk_high_bg">#2D1515</color>
+    <color name="risk_high_text">#FCA5A5</color>
+    <color name="risk_medium">#F59E0B</color>
+    <color name="risk_medium_bg">#2D2012</color>
+    <color name="risk_medium_text">#FCD34D</color>
+    <color name="risk_low">#34D399</color>
+    <color name="risk_low_bg">#0A2A20</color>
+    <color name="risk_low_text">#5EEAD4</color>
+    <color name="ai_risk_card_bg">#2D1515</color>
+    <color name="ai_risk_border">#4A2020</color>
+
+    <!-- ====== 功能色 (夜间版) ====== -->
+    <color name="success">#34D399</color>
+    <color name="success_light">#0A2A20</color>
+    <color name="success_dark">#059669</color>
+    <color name="warning">#F59E0B</color>
+    <color name="warning_light">#2D2012</color>
+    <color name="warning_dark">#B56D07</color>
+    <color name="error">#F87171</color>
+    <color name="on_error">#FFFFFF</color>
+    <color name="error_container">#2D1515</color>
+
+    <!-- ====== 阴影/遮罩 ====== -->
+    <color name="shadow">#000000</color>
+    <color name="shadow_heavy">#000000</color>
+    <color name="scrim">#B3000000</color>
+
+    <!-- ====== 描边 (夜间版) ====== -->
+    <color name="outline">#36312B</color>
+    <color name="outline_variant">#2D2723</color>
+    <color name="outline_focus">#E8680A</color>
+
+    <!-- ====== 设备信息背景 ====== -->
+    <color name="equipment_label_bg">#24211E</color>
+
+    <!-- ====== 透明度 ====== -->
+    <color name="white_10">#1AFFFFFF</color>
+    <color name="white_20">#33FFFFFF</color>
+    <color name="white_50">#80FFFFFF</color>
+    <color name="white_70">#B3FFFFFF</color>
+    <color name="black_05">#0D000000</color>
+    <color name="black_10">#1A000000</color>
+    <color name="black_20">#33000000</color>
+    <color name="black_50">#80000000</color>
+
+    <!-- ====== 灰度 (暖调深灰) ====== -->
+    <color name="gray_50">#141210</color>
+    <color name="gray_100">#1A1714</color>
+    <color name="gray_200">#1E1B18</color>
+    <color name="gray_300">#36312B</color>
+    <color name="gray_400">#5C554E</color>
+    <color name="gray_500">#8A8076</color>
+    <color name="gray_600">#BAB1A6</color>
+    <color name="gray_700">#D7CFC3</color>
+    <color name="gray_800">#F0EBE5</color>
+    <color name="gray_900">#FAF8F5</color>
+
+    <!-- ====== 品牌色 (夜间版) ====== -->
+    <color name="primary">#F07D2A</color>
+    <color name="primary_dark">#C85A08</color>
+    <color name="primary_light">#F49550</color>
+    <color name="primary_container">#2A1F14</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_primary_container">#FFB585</color>
+
+    <color name="secondary">#34D399</color>
+    <color name="secondary_container">#0A2A20</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="on_secondary_container">#5EEAD4</color>
+
+    <color name="tertiary">#60A5FA</color>
+    <color name="tertiary_container">#152238</color>
+    <color name="on_tertiary">#FFFFFF</color>
+    <color name="on_tertiary_container">#93C5FD</color>
+
+    <color name="primary_10">#1AF07D2A</color>
+    <color name="primary_50">#1AF07D2A</color>
+    <color name="primary_100">#2A1F14</color>
+    <color name="primary_200">#3D2E15</color>
+    <color name="primary_300">#FDBA74</color>
+    <color name="primary_400">#F49550</color>
+    <color name="primary_500">#E8680A</color>
+    <color name="primary_600">#C85A08</color>
+    <color name="primary_700">#9D4606</color>
+    <color name="primary_800">#6D2800</color>
+    <color name="primary_900">#4A1B00</color>
+
+    <!-- =========================================================
+         兼容旧引用 (夜间版)
+         ========================================================= -->
+    <color name="bg_main">#141210</color>
+    <color name="bg_card">#1E1B18</color>
+    <color name="bg_chat">#1A1714</color>
+    <color name="bg_input">#1A1714</color>
+    <color name="bg_divider">#2D2723</color>
+    <color name="bg_ai_card">#261E15</color>
+
+    <color name="text_hint">#8A8076</color>
+
+    <color name="nav_bg">#141210</color>
+    <color name="nav_card">#1E1B18</color>
+    <color name="nav_text">#F0EBE5</color>
+    <color name="nav_subtext">#BAB1A6</color>
+    <color name="nav_accent">#F07D2A</color>
+    <color name="nav_success">#34D399</color>
+    <color name="nav_divider">#2D2723</color>
+
+    <!-- ====== 辅助色别名 ====== -->
+    <color name="accent_orange">#F07D2A</color>
+    <color name="accent_green">#34D399</color>
+    <color name="accent_blue">#60A5FA</color>
+    <color name="accent_red">#F87171</color>
+    <color name="accent_purple">#A78BFA</color>
+
+    <!-- 深色专用色彩 -->
+    <color name="dark_background">#141210</color>
+    <color name="dark_surface">#1E1B18</color>
+    <color name="dark_surface_variant">#282420</color>
+    <color name="dark_surface_dim">#1A1714</color>
+    <color name="dark_card_background">#1E1B18</color>
+    <color name="dark_card_ai_background">#261E15</color>
+    <color name="dark_text_primary">#F0EBE5</color>
+    <color name="dark_text_secondary">#BAB1A6</color>
+    <color name="dark_text_tertiary">#8A8076</color>
+    <color name="dark_text_disabled">#5C554E</color>
+    <color name="dark_divider">#2D2723</color>
+    <color name="dark_divider_subtle">#24211E</color>
+    <color name="dark_toolbar_bg">#1E1B18</color>
+    <color name="dark_nav_bar_bg">#1E1B18</color>
+    <color name="dark_input_bg">#282420</color>
+    <color name="dark_input_stroke">#3D3730</color>
+    <color name="dark_status_pending_bg">#2D2012</color>
+    <color name="dark_status_in_progress_bg">#152238</color>
+    <color name="dark_status_completed_bg">#242120</color>
+    <color name="dark_status_urgent_bg">#2D1515</color>
+</resources>

@@ -1,0 +1,823 @@
+package com.gongyoutong.app.ui.repair;
+
+import android.Manifest;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.media.Image;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
+import android.util.Size;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import com.gongyoutong.app.Config;
+import com.gongyoutong.app.R;
+import com.gongyoutong.app.ai.RepairLlmService;
+import com.gongyoutong.app.ai.VisionAnalysisService;
+import com.gongyoutong.app.ai.VivoOcrService;
+import com.gongyoutong.app.repair.ErrorDetector;
+import com.gongyoutong.app.repair.FrameAnalysisResult;
+import com.gongyoutong.app.repair.KnowledgeBaseService;
+import com.gongyoutong.app.database.KnowledgeVectorEntity;
+import com.gongyoutong.app.repair.RepairIntention;
+import com.gongyoutong.app.repair.RepairState;
+import com.gongyoutong.app.repair.RepairStateMachine;
+import com.gongyoutong.app.repair.RepairStep;
+import com.gongyoutong.app.repair.VoiceInteractionManager;
+import com.gongyoutong.app.ui.repair.widget.ArOverlayView;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * AI 视频维修主界面 Activity。
+ * 集成 CameraX 实时预览、AR 叠加标注、语音交互、AI 视觉分析和维修状态机。
+ */
+public class VideoRepairActivity extends AppCompatActivity
+        implements RepairStateMachine.StateChangeListener {
+
+    private static final String TAG = "VideoRepairActivity";
+    private static final int CAMERA_PERMISSION_CODE = 200;
+
+    // ========== UI 组件 ==========
+    private PreviewView previewView;
+    private ArOverlayView arOverlayView;
+    private TextView tvRecordStatus;
+    private TextView tvDeviceInfo;
+    private TextView tvGuideText;
+    private TextView tvStepProgress;
+    private ImageButton btnPrevStep;
+    private ImageButton btnSkipStep;
+    private ImageButton btnTtsToggle;
+    private ImageButton btnTakePhoto;
+    private View btnVoiceInput;
+
+    // ========== 核心模块 ==========
+    private RepairStateMachine stateMachine;
+    private VoiceInteractionManager voiceManager;
+    private ErrorDetector errorDetector;
+    private KnowledgeBaseService kbService;
+    private RepairLlmService llmService;
+    private VivoOcrService ocrService;
+    private VisionAnalysisService visionService;
+
+    // ========== CameraX ==========
+    private ExecutorService cameraExecutor;
+    private ImageAnalysis imageAnalysis;
+    private ImageCapture imageCapture;
+    private long lastFrameTime = 0L;
+    private AtomicBoolean isProcessing = new AtomicBoolean(false);
+
+    // ========== 状态 ==========
+    private boolean ttsEnabled = true;
+    private String deviceModel = "";
+    private String faultDescription = "";
+
+    // ========================================================================
+    // 生命周期
+    // ========================================================================
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_video_repair);
+
+        // 接收从 RepairActivity 传入的上下文
+        Intent intent = getIntent();
+        faultDescription = intent.getStringExtra("fault_description");
+        if (faultDescription == null) faultDescription = "";
+        deviceModel = intent.getStringExtra("device_model");
+        if (deviceModel == null) deviceModel = "";
+
+        initViews();
+        initModules();
+        setupClickListeners();
+
+        // 请求相机权限后启动 CameraX
+        if (checkCameraPermission()) {
+            startCamera();
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
+                    CAMERA_PERMISSION_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startCamera();
+            } else {
+                Toast.makeText(this, "需要相机权限才能使用视频维修功能", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 重置处理标志，防止帧分析卡死
+        isProcessing.set(false);
+        if (voiceManager != null) {
+            voiceManager.release();
+        }
+        if (cameraExecutor != null) {
+            cameraExecutor.shutdown();
+        }
+    }
+
+    // ========================================================================
+    // 初始化
+    // ========================================================================
+
+    /** 绑定布局视图 */
+    private void initViews() {
+        previewView = findViewById(R.id.previewView);
+        arOverlayView = findViewById(R.id.arOverlayView);
+        tvRecordStatus = findViewById(R.id.tvRecordStatus);
+        tvDeviceInfo = findViewById(R.id.tvDeviceInfo);
+        tvGuideText = findViewById(R.id.tvGuideText);
+        tvStepProgress = findViewById(R.id.tvStepProgress);
+        btnPrevStep = findViewById(R.id.btnPrevStep);
+        btnSkipStep = findViewById(R.id.btnSkipStep);
+        btnTtsToggle = findViewById(R.id.btnTtsToggle);
+        btnTakePhoto = findViewById(R.id.btnTakePhoto);
+        btnVoiceInput = findViewById(R.id.btnVoiceInput);
+    }
+
+    /** 初始化所有核心模块 */
+    private void initModules() {
+        cameraExecutor = Executors.newSingleThreadExecutor();
+
+        stateMachine = new RepairStateMachine();
+        stateMachine.addListener(this);
+
+        errorDetector = new ErrorDetector();
+
+        kbService = KnowledgeBaseService.getInstance();
+        kbService.init(getApplicationContext());
+
+        llmService = RepairLlmService.getInstance();
+        ocrService = VivoOcrService.getInstance();
+        visionService = VisionAnalysisService.getInstance();
+
+        voiceManager = new VoiceInteractionManager(stateMachine);
+        voiceManager.setCallback(new VoiceInteractionManager.VoiceCallback() {
+            @Override
+            public void onRecognized(String text, boolean isFinal) {
+                if (isFinal && text != null && !text.isEmpty()) {
+                    // 将识别结果赋值给 faultDescription，供后续 LLM 诊断使用
+                    faultDescription = text;
+                    runOnUiThread(() -> {
+                        tvGuideText.setText("故障描述: " + text);
+                        // 如果在故障诊断阶段收到描述，自动触发 LLM 步骤规划
+                        if (stateMachine.getCurrentState() == RepairState.FAULT_DIAGNOSIS) {
+                            loadRepairSteps();
+                        }
+                    });
+                } else if (!isFinal) {
+                    runOnUiThread(() -> tvGuideText.setText("识别中: " + text));
+                }
+            }
+
+            @Override
+            public void onIntent(RepairIntention intention) {
+                Log.d(TAG, "用户意图: " + intention.getType());
+            }
+
+            @Override
+            public void onTtsStart() {
+                /* TTS 开始播报 */
+            }
+
+            @Override
+            public void onTtsComplete() {
+                /* TTS 播报完成 */
+            }
+
+            @Override
+            public void onError(String msg) {
+                runOnUiThread(() ->
+                        Toast.makeText(VideoRepairActivity.this, msg, Toast.LENGTH_SHORT).show());
+            }
+        });
+
+        // 初始状态 → 设备识别
+        stateMachine.transitionTo(RepairState.DEVICE_IDENTIFY);
+    }
+
+    // ========================================================================
+    // 按钮事件
+    // ========================================================================
+
+    private void setupClickListeners() {
+        // 按住说话
+        btnVoiceInput.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.setPressed(true);
+                        voiceManager.startListening();
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        v.setPressed(false);
+                        voiceManager.stopListening();
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+
+        // TTS 开关
+        btnTtsToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ttsEnabled = !ttsEnabled;
+                voiceManager.setTtsEnabled(ttsEnabled);
+                btnTtsToggle.setImageResource(ttsEnabled
+                        ? android.R.drawable.ic_lock_silent_mode_off
+                        : android.R.drawable.ic_lock_silent_mode);
+            }
+        });
+
+        // 上一步 / 回退
+        btnPrevStep.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stateMachine.goBack();
+            }
+        });
+
+        // 下一步 / 跳过
+        btnSkipStep.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stateMachine.skipCurrent();
+            }
+        });
+
+        // 拍照（保存当前帧到相册）
+        btnTakePhoto.setOnClickListener(v -> capturePhoto());
+    }
+
+    // ========================================================================
+    // 拍照
+    // ========================================================================
+
+    private void capturePhoto() {
+        if (imageCapture == null) {
+            Toast.makeText(this, "相机尚未就绪", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String fileName = "GYT_" + System.currentTimeMillis() + ".jpg";
+        ImageCapture.OutputFileOptions outputOptions;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
+            contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+            contentValues.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/工友通");
+            outputOptions = new ImageCapture.OutputFileOptions.Builder(
+                    getContentResolver(),
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    contentValues).build();
+        } else {
+            File dir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES), "工友通");
+            if (!dir.exists()) dir.mkdirs();
+            outputOptions = new ImageCapture.OutputFileOptions.Builder(
+                    new File(dir, fileName)).build();
+        }
+
+        imageCapture.takePicture(outputOptions, cameraExecutor,
+                new ImageCapture.OnImageSavedCallback() {
+                    @Override
+                    public void onImageSaved(@NonNull ImageCapture.OutputFileResults output) {
+                        runOnUiThread(() ->
+                            Toast.makeText(VideoRepairActivity.this,
+                                    "维修照片已保存", Toast.LENGTH_SHORT).show());
+                    }
+
+                    @Override
+                    public void onError(@NonNull ImageCaptureException exception) {
+                        runOnUiThread(() ->
+                            Toast.makeText(VideoRepairActivity.this,
+                                    "拍照失败: " + exception.getMessage(), Toast.LENGTH_SHORT).show());
+                    }
+                });
+    }
+
+    // ========================================================================
+    // CameraX
+    // ========================================================================
+
+    /** 检查相机权限 */
+    private boolean checkCameraPermission() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /** 启动 CameraX 预览 + 帧分析 */
+    private void startCamera() {
+        ListenableFuture<ProcessCameraProvider> providerFuture =
+                ProcessCameraProvider.getInstance(this);
+        providerFuture.addListener(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    ProcessCameraProvider provider = providerFuture.get();
+                    provider.unbindAll();
+
+                    // Preview
+                    Preview preview = new Preview.Builder().build();
+                    preview.setSurfaceProvider(previewView.getSurfaceProvider());
+
+                    // ImageCapture - 拍照
+                    imageCapture = new ImageCapture.Builder()
+                            .setTargetResolution(new Size(1920, 1080))
+                            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                            .build();
+
+                    // ImageAnalysis：控制帧率 ≈ 1fps
+                    imageAnalysis = new ImageAnalysis.Builder()
+                            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                            .setTargetResolution(new Size(
+                                    Config.CAMERA_FRAME_MAX_WIDTH,
+                                    Config.CAMERA_FRAME_MAX_WIDTH * 3 / 4))
+                            .build();
+                    imageAnalysis.setAnalyzer(cameraExecutor, VideoRepairActivity.this::analyzeFrame);
+
+                    CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+                    provider.bindToLifecycle(
+                            VideoRepairActivity.this, cameraSelector, preview, imageAnalysis, imageCapture);
+
+                    Log.d(TAG, "CameraX 已启动");
+                } catch (Exception e) {
+                    Log.e(TAG, "CameraX 启动失败: " + e.getMessage());
+                }
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    /**
+     * 帧分析回调（后台线程）。
+     * 根据当前状态决定分析策略：设备识别 → OCR，步骤引导/动作验证 → Vision。
+     */
+    private void analyzeFrame(@NonNull ImageProxy imageProxy) {
+        long now = System.currentTimeMillis();
+        // 控制帧率：不低于 Config.CAMERA_FRAME_INTERVAL_MS 间隔
+        if (now - lastFrameTime < Config.CAMERA_FRAME_INTERVAL_MS) {
+            imageProxy.close();
+            return;
+        }
+        lastFrameTime = now;
+
+        if (isProcessing.get()) {
+            imageProxy.close();
+            return;
+        }
+        isProcessing.set(true);
+
+        try {
+            String base64 = imageProxyToBase64(imageProxy);
+            if (base64 == null) {
+                isProcessing.set(false);
+                return;
+            }
+
+            RepairState state = stateMachine.getCurrentState();
+
+            if (state == RepairState.DEVICE_IDENTIFY) {
+                // 设备识别阶段：跑 OCR 提取铭牌文字
+                ocrService.recognize(base64, new VivoOcrService.OcrCallback() {
+                    @Override
+                    public void onSuccess(String ocrText) {
+                        isProcessing.set(false);
+                        if (ocrText != null && !ocrText.isEmpty()) {
+                            runOnUiThread(() -> onDeviceIdentified(ocrText));
+                        }
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        isProcessing.set(false);
+                        Log.w(TAG, "OCR 识别失败: " + msg);
+                    }
+                });
+
+            } else if (state == RepairState.STEP_GUIDE || state == RepairState.ACTION_VERIFY) {
+                // 步骤引导 / 动作验证阶段：跑 Vision 分析
+                RepairStep step = stateMachine.getCurrentStep();
+                String context = (step != null)
+                        ? step.getDescription()
+                        : "分析当前维修场景";
+                visionService.analyze(base64, context, new VisionAnalysisService.VisionCallback() {
+                    @Override
+                    public void onSuccess(String description,
+                                          List<FrameAnalysisResult.BoundingBox> regions,
+                                          float confidence) {
+                        isProcessing.set(false);
+                        runOnUiThread(() -> {
+                            arOverlayView.setRegions(regions);
+                            arOverlayView.invalidate();
+                        });
+
+                        // 错误检测
+                        RepairStep currentStep = stateMachine.getCurrentStep();
+                        FrameAnalysisResult result = new FrameAnalysisResult();
+                        result.setDescription(description);
+                        // Bug #1 fix: 填充检测信息供 ErrorDetector 使用
+                        result.setSafetyPowerOff(isSafetyConfirmed(description, currentStep));
+                        result.setVisionDetectedAction(extractActionKeyword(description, currentStep));
+                        result.setVisionDetectedTool(extractToolKeyword(description, currentStep));
+                        List<ErrorDetector.ErrorType> errors =
+                                errorDetector.detect(result, currentStep);
+                        if (!errors.isEmpty()) {
+                            runOnUiThread(() -> onErrorDetected(errors));
+                        }
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        isProcessing.set(false);
+                        Log.w(TAG, "Vision 分析失败: " + msg);
+                    }
+                });
+
+            } else {
+                isProcessing.set(false);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "帧分析异常: " + e.getMessage());
+            isProcessing.set(false);
+        } finally {
+            imageProxy.close();
+        }
+    }
+
+    /**
+     * 将 ImageProxy（YUV_420_888）转换为 JPEG Base64 字符串。
+     *
+     * @param image CameraX 帧代理
+     * @return Base64 编码的 JPEG 数据，失败返回 null
+     */
+    private String imageProxyToBase64(ImageProxy image) {
+        try {
+            ImageProxy.PlaneProxy[] planes = image.getPlanes();
+            if (planes.length < 3) {
+                Log.w(TAG, "Plane 数量不足: " + planes.length);
+                return null;
+            }
+
+            ByteBuffer yBuffer = planes[0].getBuffer();
+            ByteBuffer uBuffer = planes[1].getBuffer();
+            ByteBuffer vBuffer = planes[2].getBuffer();
+
+            int ySize = yBuffer.remaining();
+            int uSize = uBuffer.remaining();
+            int vSize = vBuffer.remaining();
+
+            byte[] nv21 = new byte[ySize + uSize + vSize];
+            yBuffer.get(nv21, 0, ySize);
+            vBuffer.get(nv21, ySize, vSize);
+            uBuffer.get(nv21, ySize + vSize, uSize);
+
+            android.graphics.YuvImage yuvImage = new android.graphics.YuvImage(
+                    nv21, android.graphics.ImageFormat.NV21,
+                    image.getWidth(), image.getHeight(), null);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            yuvImage.compressToJpeg(
+                    new android.graphics.Rect(0, 0, image.getWidth(), image.getHeight()),
+                    Config.CAMERA_FRAME_QUALITY, out);
+
+            byte[] jpegBytes = out.toByteArray();
+            return Base64.encodeToString(jpegBytes, Base64.NO_WRAP);
+        } catch (Exception e) {
+            Log.e(TAG, "帧转 Base64 失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // ========================================================================
+    // 状态机回调
+    // ========================================================================
+
+    @Override
+    public void onStateChanged(RepairState oldState, RepairState newState) {
+        Log.d(TAG, "状态变更: " + oldState + " → " + newState);
+        updateUIForState(newState);
+
+        switch (newState) {
+            case DEVICE_IDENTIFY:
+                voiceManager.speak("请将摄像头对准设备铭牌");
+                arOverlayView.clear();
+                break;
+
+            case FAULT_DIAGNOSIS:
+                if (!faultDescription.isEmpty()) {
+                    // 已有故障描述，直接开始 AI 诊断
+                    voiceManager.speak("正在分析故障，请稍候");
+                    tvGuideText.setText("AI 正在诊断: " + faultDescription);
+                    loadRepairSteps();
+                } else {
+                    voiceManager.speak("请描述设备故障现象");
+                    tvGuideText.setText("请按住说话按钮，描述设备故障现象");
+                }
+                break;
+
+            case STEP_GUIDE:
+                RepairStep step = stateMachine.getCurrentStep();
+                if (step != null) {
+                    voiceManager.speak(step.getDescription());
+                    tvGuideText.setText(step.getTitle() + ": " + step.getDescription());
+                }
+                break;
+
+            case ERROR_CORRECT:
+                voiceManager.speak("检测到操作异常，请纠正");
+                break;
+
+            case COMPLETION_CHECK:
+                voiceManager.speak("所有步骤已完成，请确认维修结果");
+                break;
+
+            case REPORT_GENERATE:
+                voiceManager.speak("正在生成维修报告");
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public void onStepChanged(int stepIndex, RepairStep step) {
+        if (step != null) {
+            int total = stateMachine.getTotalSteps();
+            tvStepProgress.setText((stepIndex + 1) + "/" + total);
+            // 在屏幕上显示当前步骤的标题和描述
+            tvGuideText.setText(step.getTitle() + ": " + step.getDescription());
+        }
+    }
+
+    // ========================================================================
+    // 业务逻辑
+    // ========================================================================
+
+    /**
+     * 设备识别成功后的处理。
+     * 从 OCR 文本提取设备型号，搜索知识库，切换到故障诊断状态。
+     */
+    private void onDeviceIdentified(String ocrText) {
+        deviceModel = extractDeviceModel(ocrText);
+        tvDeviceInfo.setText(deviceModel);
+        tvGuideText.setText("识别到设备: " + deviceModel);
+        voiceManager.speak("检测到设备 " + deviceModel);
+
+        // 搜索知识库（异步，结果可用于后续诊断）
+        kbService.search(deviceModel, 3, new KnowledgeBaseService.SearchCallback() {
+            @Override
+            public void onResults(List<KnowledgeVectorEntity> results) {
+                Log.d(TAG, "知识库匹配到 " + results.size() + " 条");
+            }
+
+            @Override
+            public void onError(String msg) {
+                Log.w(TAG, "知识库搜索失败: " + msg);
+            }
+        });
+
+        // 切换到故障诊断
+        stateMachine.transitionTo(RepairState.FAULT_DIAGNOSIS);
+    }
+
+    /** 执行故障诊断，引导用户描述故障后调用 LLM 规划步骤 */
+    private void performDiagnosis() {
+        // 已有故障描述则直接加载维修步骤
+        if (!faultDescription.isEmpty()) {
+            tvGuideText.setText("AI 正在诊断: " + faultDescription);
+            loadRepairSteps();
+            return;
+        }
+        // 无故障描述，提示用户通过语音输入描述
+        tvGuideText.setText("请按住说话按钮，描述设备故障现象");
+    }
+
+    /** 调用 LLM 规划维修步骤，失败时使用默认步骤 */
+    private void loadRepairSteps() {
+        String faultText = faultDescription.isEmpty() ? "通用故障" : faultDescription;
+        llmService.planSteps(deviceModel, faultText, new RepairLlmService.StepsCallback() {
+            @Override
+            public void onStepsReady(List<RepairStep> steps) {
+                stateMachine.setSteps(steps);
+                stateMachine.transitionTo(RepairState.STEP_GUIDE);
+                tvGuideText.setText("加载了 " + steps.size() + " 个维修步骤");
+            }
+
+            @Override
+            public void onError(String msg) {
+                Log.w(TAG, "LLM 步骤规划失败，使用默认步骤: " + msg);
+                List<RepairStep> defaultSteps = createDefaultSteps();
+                stateMachine.setSteps(defaultSteps);
+                stateMachine.transitionTo(RepairState.STEP_GUIDE);
+                tvGuideText.setText("使用默认维修步骤");
+            }
+        });
+    }
+
+    /** 错误检测回调：进入错误纠正状态并播报警告 */
+    private void onErrorDetected(List<ErrorDetector.ErrorType> errors) {
+        if (errors.isEmpty()) {
+            return;
+        }
+        stateMachine.transitionTo(RepairState.ERROR_CORRECT);
+
+        StringBuilder sb = new StringBuilder();
+        for (ErrorDetector.ErrorType err : errors) {
+            sb.append(err.label).append(" ");
+        }
+        String allWarnings = sb.toString().trim();
+        arOverlayView.setWarning(allWarnings);
+        voiceManager.speak(allWarnings);
+    }
+
+    /**
+     * 从 OCR 文本中提取设备型号。
+     * 简单启发式：取第一行非空内容作为型号。
+     */
+    private String extractDeviceModel(String ocrText) {
+        if (ocrText == null || ocrText.isEmpty()) {
+            return "未知设备";
+        }
+        String[] lines = ocrText.split("\\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (!trimmed.isEmpty() && trimmed.length() >= 2) {
+                return trimmed;
+            }
+        }
+        return "未知设备";
+    }
+
+    /** 创建默认维修步骤（LLM 不可用时的降级方案） */
+    private List<RepairStep> createDefaultSteps() {
+        List<RepairStep> steps = new ArrayList<>();
+        steps.add(new RepairStep(
+                "安全检查", "断开设备电源，确保安全操作环境", "无", "务必断电后再操作"));
+        steps.add(new RepairStep(
+                "外观检查", "检查设备外观是否有明显损坏", "手电筒", "注意尖锐边缘"));
+        steps.add(new RepairStep(
+                "拆卸外壳", "使用螺丝刀拆卸外壳面板", "螺丝刀", "妥善保管拆下的螺丝"));
+        steps.add(new RepairStep(
+                "内部检查", "检查内部线路和部件连接", "万用表", "避免触碰带电部件"));
+        steps.add(new RepairStep(
+                "故障定位", "根据诊断结果定位故障部件", "无", ""));
+        steps.add(new RepairStep(
+                "部件更换", "更换或修复故障部件", "扳手", "使用原厂配件"));
+        steps.add(new RepairStep(
+                "组装复原", "按拆卸顺序反向组装", "螺丝刀", "确保所有螺丝拧紧"));
+        steps.add(new RepairStep(
+                "功能测试", "通电测试设备功能是否正常", "无", "首次通电注意观察异常"));
+        return steps;
+    }
+
+    /**
+     * 从 Vision 描述和当前步骤中推断安全确认状态。
+     * 如果描述中包含安全相关关键词，或当前步骤标题含"安全"即认为已确认。
+     */
+    private boolean isSafetyConfirmed(String description, RepairStep step) {
+        if (description == null) {
+            return false;
+        }
+        String lower = description.toLowerCase();
+        if (lower.contains("断电") || lower.contains("安全") || lower.contains("电源")
+                || lower.contains("power off") || lower.contains("safety")) {
+            return true;
+        }
+        if (step != null && step.getTitle() != null && step.getTitle().contains("安全")) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 从 Vision 描述中提取当前检测到的操作关键词。
+     * 优先从描述中匹配当前步骤标题，降级使用步骤标题本身。
+     */
+    private String extractActionKeyword(String description, RepairStep step) {
+        if (step == null || step.getTitle() == null || step.getTitle().isEmpty()) {
+            return "未知操作";
+        }
+        // 尝试在描述中找步骤标题的匹配词
+        if (description != null && description.contains(step.getTitle())) {
+            return step.getTitle();
+        }
+        // 降级：使用常见动作关键词匹配
+        String[] actionKeywords = {"拆卸", "检查", "更换", "安装", "测试",
+                "断开", "连接", "清洁", "调整", "修复", "组装"};
+        if (description != null) {
+            for (String kw : actionKeywords) {
+                if (description.contains(kw)) {
+                    return kw;
+                }
+            }
+        }
+        // 最终降级：返回步骤标题
+        return step.getTitle();
+    }
+
+    /**
+     * 从 Vision 描述中提取当前检测到的工具关键词。
+     * 优先匹配当前步骤的所需工具，降级使用常见工具关键词匹配。
+     */
+    private String extractToolKeyword(String description, RepairStep step) {
+        if (description == null) {
+            return "";
+        }
+        // 优先匹配当前步骤的所需工具
+        if (step != null && step.getToolRequired() != null
+                && !step.getToolRequired().isEmpty()
+                && !"无".equals(step.getToolRequired())) {
+            if (description.contains(step.getToolRequired())) {
+                return step.getToolRequired();
+            }
+        }
+        // 降级：常见工具关键词匹配
+        String[] toolKeywords = {"螺丝刀", "扳手", "万用表", "手电筒", "电烙铁",
+                "钳子", "锤子", "电钻", "剪刀", "胶带"};
+        for (String tool : toolKeywords) {
+            if (description.contains(tool)) {
+                return tool;
+            }
+        }
+        return "";
+    }
+
+    /** 根据当前状态更新顶部状态指示 */
+    private void updateUIForState(RepairState state) {
+        switch (state) {
+            case DEVICE_IDENTIFY:
+                tvRecordStatus.setText("\uD83D\uDD0D 识别设备中");
+                arOverlayView.clear();
+                break;
+            case FAULT_DIAGNOSIS:
+                tvRecordStatus.setText("\uD83D\uDD34 诊断中");
+                break;
+            case STEP_GUIDE:
+                tvRecordStatus.setText("\uD83D\uDD34 录制中");
+                break;
+            case ACTION_VERIFY:
+                tvRecordStatus.setText("\uD83D\uDD0D 验证中");
+                break;
+            case ERROR_CORRECT:
+                tvRecordStatus.setText("\u26A0\uFE0F 错误纠正");
+                break;
+            case COMPLETION_CHECK:
+                tvRecordStatus.setText("\u2705 验证中");
+                break;
+            case REPORT_GENERATE:
+                tvRecordStatus.setText("\uD83D\uDCDD 报告生成");
+                break;
+            default:
+                break;
+        }
+    }
+}
