@@ -954,20 +954,19 @@ function sendDemoMsg() {
   }, 500);
 }
 
-// Auto demo after delay
+// Auto demo: 3 examples, one-shot
 setTimeout(() => {
   const input = document.getElementById('chatInput');
   const demoTexts = [
     '明天上午十点去北京路安装空调',
     '帮我诊断一下这个冰箱的故障',
-    '生成一份维修报价单',
-    '空调安装需要什么工具？'
+    '生成一份维修报价单'
   ];
   let idx = 0;
   function autoDemo() {
-    if (document.hidden) return;
+    if (document.hidden || idx >= demoTexts.length) return;
     input.value = '';
-    const text = demoTexts[idx % demoTexts.length];
+    const text = demoTexts[idx];
     let charIdx = 0;
     const typeTimer = setInterval(() => {
       if (charIdx < text.length) {
@@ -978,12 +977,13 @@ setTimeout(() => {
         setTimeout(() => {
           sendDemoMsg();
           idx++;
-          setTimeout(autoDemo, 6000);
+          if (idx < demoTexts.length) {
+            setTimeout(autoDemo, 5000);
+          }
         }, 800);
       }
     }, 80);
   }
-  // Start auto demo when chat section is visible
   const chatSection = document.getElementById('ai-demo');
   const autoObserver = new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting) {
