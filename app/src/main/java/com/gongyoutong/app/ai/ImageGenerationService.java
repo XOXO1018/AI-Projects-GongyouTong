@@ -4,7 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
 import com.gongyoutong.app.repair.ImageGenerationResult;
 
 import org.json.JSONArray;
@@ -43,7 +42,7 @@ public class ImageGenerationService {
     private ImageGenerationService() {
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(Config.IMAGE_GENERATION_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(AiConfig.IMAGE_GENERATION_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(true)
                 .build();
@@ -98,10 +97,10 @@ public class ImageGenerationService {
             int retryCount = 0;
             Exception lastException = null;
 
-            while (retryCount <= Config.MAX_IMAGE_RETRY) {
+            while (retryCount <= AiConfig.MAX_IMAGE_RETRY) {
                 try {
                     if (retryCount > 0) {
-                        Log.d(TAG, "图片生成重试 " + retryCount + "/" + Config.MAX_IMAGE_RETRY);
+                        Log.d(TAG, "图片生成重试 " + retryCount + "/" + AiConfig.MAX_IMAGE_RETRY);
                         // 检测是否为频率限制错误，使用更长的退避时间
                         boolean isRateLimit = isRateLimitError(lastException);
                         long waitMs = isRateLimit
@@ -115,14 +114,14 @@ public class ImageGenerationService {
                     // 1. 构造 URL（含查询参数）
                     String requestId = UUID.randomUUID().toString();
                     long systemTime = System.currentTimeMillis() / 1000;
-                    String url = Config.VIVO_IMAGE_GENERATION_URL
-                            + "?module=" + Config.VIVO_IMAGE_MODULE
+                    String url = AiConfig.VIVO_IMAGE_GENERATION_URL
+                            + "?module=" + AiConfig.VIVO_IMAGE_MODULE
                             + "&request_id=" + requestId
                             + "&system_time=" + systemTime;
 
                     // 2. 构造请求体
                     JSONObject requestJson = new JSONObject();
-                    requestJson.put("model", Config.VIVO_IMAGE_MODEL);
+                    requestJson.put("model", AiConfig.VIVO_IMAGE_MODEL);
                     requestJson.put("prompt", prompt);
 
                     // image 字段：0张不传，1张传字符串，2+张传数组
@@ -150,10 +149,9 @@ public class ImageGenerationService {
                     }
                     // 0 张照片时不传 image 字段
 
-                    // 参数（单图模式，生成维修流程图）
+                    // 参数
                     JSONObject parameters = new JSONObject();
-                    parameters.put("size", Config.DEFAULT_IMAGE_SIZE);
-                    parameters.put("sequential_image_generation", "disabled");
+                    parameters.put("size", AiConfig.DEFAULT_IMAGE_SIZE);
                     requestJson.put("parameters", parameters);
 
                     // 3. 发送请求
@@ -162,7 +160,7 @@ public class ImageGenerationService {
                             .url(url)
                             .post(body)
                             .addHeader("Content-Type", "application/json")
-                            .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                            .addHeader("Authorization", AiConfig.authHeader())
                             .build();
 
                     Log.d(TAG, "图片生成请求: requestId=" + requestId

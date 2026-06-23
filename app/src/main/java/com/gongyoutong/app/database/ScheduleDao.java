@@ -62,4 +62,12 @@ public interface ScheduleDao {
     // 获取日程数量
     @Query("SELECT COUNT(*) FROM schedules WHERE status != '已完成' AND status != '已取消'")
     int getActiveScheduleCount();
+
+    // 查询指定时间范围内的日程
+    @Query("SELECT * FROM schedules WHERE time BETWEEN :start AND :end ORDER BY time ASC")
+    List<ScheduleEntity> getSchedulesBetween(long start, long end);
+
+    // 查询紧急日程（进行中或过期待出发）
+    @Query("SELECT * FROM schedules WHERE status = '进行中' OR (time < :now AND status = '待出发')")
+    List<ScheduleEntity> getUrgentSchedules(long now);
 }

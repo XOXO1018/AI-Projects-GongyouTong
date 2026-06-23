@@ -43,6 +43,7 @@ import com.gongyoutong.app.ai.VivoAsrService;
 import com.gongyoutong.app.ai.ImageGenerationService;
 import com.gongyoutong.app.data.Schedule;
 import com.gongyoutong.app.data.ScheduleAdapter;
+import com.gongyoutong.app.data.WorkspaceRepository;
 import com.gongyoutong.app.database.AppDatabase;
 import com.gongyoutong.app.database.ScheduleDao;
 import com.gongyoutong.app.database.ScheduleEntity;
@@ -83,7 +84,11 @@ public class MainActivity extends AppCompatActivity {
     private VivoAiService aiService;
     private VivoAsrService asrService;
     private ImageGenerationService imageGenerationService;
+    private WorkspaceRepository workspaceRepository;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    // 工作台视图
+    private TextView tvPendingOrders, tvTodayIncome, tvTodaySchedules;
 
     // 语音识别状态
     private boolean isListening = false;
@@ -102,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
         aiService = new VivoAiService();
         asrService = new VivoAsrService();
         imageGenerationService = ImageGenerationService.getInstance();
+        workspaceRepository = WorkspaceRepository.getInstance(this);
 
         initViews();
         setupWindowInsets();
@@ -110,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
         setupClickListeners();
         setupBackHandler();
         loadSchedulesFromDatabase();
+        loadWorkspaceData();
         updateEmptyState();
     }
 
@@ -127,6 +134,11 @@ public class MainActivity extends AppCompatActivity {
         layoutAiReply = findViewById(R.id.layoutAiReply);
         tvAiReply = findViewById(R.id.tvAiReply);
         tvAiReplyTime = findViewById(R.id.tvAiReplyTime);
+
+        // 工作台视图
+        tvPendingOrders = findViewById(R.id.tvPendingOrders);
+        tvTodayIncome = findViewById(R.id.tvTodayIncome);
+        tvTodaySchedules = findViewById(R.id.tvTodaySchedules);
 
         updateSendButtonState();
     }
@@ -502,6 +514,14 @@ public class MainActivity extends AppCompatActivity {
 
     // ==================== 数据加载 ====================
 
+    private void loadWorkspaceData() {
+        workspaceRepository.getWorkspaceData(data -> runOnUiThread(() -> {
+            tvPendingOrders.setText(String.valueOf(data.pendingOrders));
+            tvTodayIncome.setText(String.format("¥%.0f", data.todayIncome));
+            tvTodaySchedules.setText(String.valueOf(data.todaySchedules.size()));
+        }));
+    }
+
     private void loadSchedulesFromDatabase() {
         executor.execute(() -> {
             // 首页加载今日待出发和进行中的日程
@@ -683,6 +703,7 @@ public class MainActivity extends AppCompatActivity {
         nav.setSelectedItemId(R.id.nav_home);
         
         // 刷新数据
+        loadWorkspaceData();
         executor.execute(() -> {
             scheduleList.clear();
             scheduleList.addAll(loadSchedulesFromDb());

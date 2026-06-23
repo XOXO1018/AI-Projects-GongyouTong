@@ -4,7 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
 import com.gongyoutong.app.repair.FrameAnalysisResult;
 import com.gongyoutong.app.repair.FrameAnalysisResult.BoundingBox;
 
@@ -43,7 +42,7 @@ public class VisionAnalysisService {
     private VisionAnalysisService() {
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(Config.VISION_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(AiConfig.VISION_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(false)
                 .build();
@@ -92,7 +91,7 @@ public class VisionAnalysisService {
             try {
                 // 1. 构造多模态请求 JSON
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_VISION_MODEL);
+                requestJson.put("model", AiConfig.VIVO_VISION_MODEL);
 
                 JSONArray messages = new JSONArray();
 
@@ -134,10 +133,10 @@ public class VisionAnalysisService {
                 // 2. 发送请求
                 RequestBody body = RequestBody.create(requestJson.toString(), JSON_TYPE);
                 Request request = new Request.Builder()
-                        .url(Config.VIVO_API_URL)
+                        .url(AiConfig.VIVO_API_URL)
                         .post(body)
                         .addHeader("Content-Type", "application/json")
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .build();
 
                 Log.d(TAG, "视觉分析请求: 帧长度=" + base64Frame.length());

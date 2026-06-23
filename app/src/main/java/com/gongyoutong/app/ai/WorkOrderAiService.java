@@ -4,7 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
 import com.gongyoutong.app.repair.DiagnosisRequest;
 import com.gongyoutong.app.repair.DiagnosisResult;
 import com.gongyoutong.app.repair.RepairIntention;
@@ -191,7 +190,7 @@ public class WorkOrderAiService {
         executor.execute(() -> {
             try {
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_MODEL);
+                requestJson.put("model", AiConfig.VIVO_MODEL);
 
                 JSONArray messages = new JSONArray();
 
@@ -213,10 +212,10 @@ public class WorkOrderAiService {
 
                 RequestBody body = RequestBody.create(requestJson.toString(), JSON_TYPE);
                 Request request = new Request.Builder()
-                        .url(Config.VIVO_API_URL)
+                        .url(AiConfig.VIVO_API_URL)
                         .post(body)
                         .addHeader("Content-Type", "application/json")
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .build();
 
                 try (Response response = httpClient.newCall(request).execute()) {
@@ -302,7 +301,7 @@ public class WorkOrderAiService {
             try {
                 // 1. 构造请求 JSON
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_MODEL);
+                requestJson.put("model", AiConfig.VIVO_MODEL);
 
                 JSONArray messages = new JSONArray();
 
@@ -419,15 +418,15 @@ public class WorkOrderAiService {
             try {
                 // 创建独立的长超时 OkHttpClient（60s 诊断超时）
                 OkHttpClient diagnosisClient = httpClient.newBuilder()
-                        .readTimeout(Config.AI_DIAGNOSIS_TIMEOUT, TimeUnit.SECONDS)
+                        .readTimeout(AiConfig.AI_DIAGNOSIS_TIMEOUT, TimeUnit.SECONDS)
                         .build();
 
                 RequestBody body = RequestBody.create(requestBody.toString(), JSON_TYPE);
                 Request request = new Request.Builder()
-                        .url(Config.VIVO_API_URL)
+                        .url(AiConfig.VIVO_API_URL)
                         .post(body)
                         .addHeader("Content-Type", "application/json")
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .build();
 
                 try (Response response = diagnosisClient.newCall(request).execute()) {

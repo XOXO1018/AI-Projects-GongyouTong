@@ -5,8 +5,6 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
-
 import org.json.JSONObject;
 
 import java.util.UUID;
@@ -115,10 +113,10 @@ public class VivoAsrService {
             String systemTime = String.valueOf(System.currentTimeMillis());
 
             // 构建 URL 查询参数（根据官方文档）
-            String wsUrl = Config.VIVO_ASR_WS_URL
-                    + "?engineid=" + Config.VIVO_ASR_ENGINE_ID
+            String wsUrl = AiConfig.VIVO_ASR_WS_URL
+                    + "?engineid=" + AiConfig.VIVO_ASR_ENGINE_ID
                     + "&system_time=" + systemTime
-                    + "&user_id=" + Config.VIVO_ASR_USER_ID
+                    + "&user_id=" + AiConfig.VIVO_ASR_USER_ID
                     + "&model=unknown"
                     + "&product=unknown"
                     + "&package=com.gongyoutong.app"
@@ -130,7 +128,7 @@ public class VivoAsrService {
 
             Request request = new Request.Builder()
                     .url(wsUrl)
-                    .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                    .addHeader("Authorization", AiConfig.authHeader())
                     .build();
 
             CountDownLatch connectLatch = new CountDownLatch(1);

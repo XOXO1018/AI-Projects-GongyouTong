@@ -4,7 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
 import com.gongyoutong.app.data.Schedule;
 
 import org.json.JSONArray;
@@ -166,15 +165,15 @@ public class VivoAiService {
     }
 
     private String getApiUrl() {
-        return Config.VIVO_API_URL;
+        return AiConfig.VIVO_API_URL;
     }
 
     private String getApiKey() {
-        return Config.VIVO_APP_KEY;
+        return AiConfig.VIVO_APP_KEY;
     }
 
     private String getModel() {
-        return Config.VIVO_MODEL;
+        return AiConfig.VIVO_MODEL;
     }
 
     // 线程池用于异步任务
@@ -1668,15 +1667,15 @@ public class VivoAiService {
                 messages.put(userMsg);
 
                 org.json.JSONObject body = new org.json.JSONObject();
-                body.put("model", Config.VIVO_MODEL);
+                body.put("model", AiConfig.VIVO_MODEL);
                 body.put("messages", messages);
                 body.put("max_tokens", 300);
                 body.put("temperature", 0.3);
 
                 okhttp3.Request request = new okhttp3.Request.Builder()
-                        .url(Config.VIVO_API_URL)
+                        .url(AiConfig.VIVO_API_URL)
                         .post(okhttp3.RequestBody.create(body.toString(), JSON))
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .addHeader("Content-Type", "application/json")
                         .build();
 
@@ -1756,7 +1755,7 @@ public class VivoAiService {
                     + "}";
 
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_MODEL);
+                requestJson.put("model", AiConfig.VIVO_MODEL);
                 requestJson.put("stream", false);
                 requestJson.put("temperature", 0.3);
                 requestJson.put("max_tokens", 1500);
@@ -1780,10 +1779,10 @@ public class VivoAiService {
                 okhttp3.RequestBody body = okhttp3.RequestBody.create(
                         requestJson.toString(), JSON);
                 okhttp3.Request req = new okhttp3.Request.Builder()
-                        .url(Config.VIVO_API_URL)
+                        .url(AiConfig.VIVO_API_URL)
                         .post(body)
                         .addHeader("Content-Type", "application/json")
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .build();
 
                 try (okhttp3.Response response = client.newCall(req).execute()) {

@@ -54,6 +54,18 @@
             android:text=""
             android:textColor="#FFFFFF"
             android:textSize="12sp" />
+
+        <View
+            android:layout_width="8dp"
+            android:layout_height="0dp" />
+
+        <TextView
+            android:id="@+id/tvJoyAiStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VL: --"
+            android:textColor="#80FFFFFF"
+            android:textSize="10sp" />
     </LinearLayout>
 
     <!-- 底部引导面板 -->
@@ -151,6 +163,14 @@
             android:src="@android:drawable/ic_menu_camera"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/video_repair_take_photo" />
+
+        <ImageButton
+            android:id="@+id/btnGenerateVideo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_media_play"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video_repair_generate_video" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

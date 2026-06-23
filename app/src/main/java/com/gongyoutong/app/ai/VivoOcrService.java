@@ -4,8 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
-
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -39,7 +37,7 @@ public class VivoOcrService {
     private VivoOcrService() {
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(Config.OCR_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(AiConfig.OCR_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(false)
                 .build();
@@ -88,14 +86,14 @@ public class VivoOcrService {
                 // 1. 构造 URL（含查询参数）
                 String requestId = UUID.randomUUID().toString();
                 long systemTime = System.currentTimeMillis() / 1000;
-                String url = Config.VIVO_OCR_URL
+                String url = AiConfig.VIVO_OCR_URL
                         + "?module=ocr"
                         + "&request_id=" + requestId
                         + "&system_time=" + systemTime;
 
                 // 2. 构造请求体
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_OCR_MODEL);
+                requestJson.put("model", AiConfig.VIVO_OCR_MODEL);
                 requestJson.put("image", "data:image/jpeg;base64," + base64Image);
 
                 RequestBody body = RequestBody.create(requestJson.toString(), JSON_TYPE);
@@ -103,7 +101,7 @@ public class VivoOcrService {
                         .url(url)
                         .post(body)
                         .addHeader("Content-Type", "application/json")
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .build();
 
                 Log.d(TAG, "OCR 请求: requestId=" + requestId

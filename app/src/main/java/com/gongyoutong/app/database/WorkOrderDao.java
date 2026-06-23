@@ -68,4 +68,12 @@ public interface WorkOrderDao {
     /** 更新关联日程ID */
     @Query("UPDATE work_orders SET scheduleId = :scheduleId, updatedAt = :updatedAt WHERE orderNo = :orderNo")
     void updateScheduleId(String orderNo, String scheduleId, long updatedAt);
+
+    /** 获取指定时间后的已完成工单数 */
+    @Query("SELECT COUNT(*) FROM work_orders WHERE status = 'COMPLETED' AND completedAt > :startTime")
+    int getCompletedCount(long startTime);
+
+    /** 获取指定时间后的总收入 */
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM work_orders WHERE status = 'COMPLETED' AND completedAt > :startTime")
+    double getTotalIncome(long startTime);
 }

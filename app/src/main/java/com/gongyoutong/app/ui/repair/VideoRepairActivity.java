@@ -36,7 +36,10 @@ import androidx.core.content.ContextCompat;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.gongyoutong.app.Config;
 import com.gongyoutong.app.R;
+import com.gongyoutong.app.ai.JoyAiVlConfig;
+import com.gongyoutong.app.ai.JoyAiVlService;
 import com.gongyoutong.app.ai.RepairLlmService;
+import com.gongyoutong.app.ai.VideoGenerationService;
 import com.gongyoutong.app.ai.VisionAnalysisService;
 import com.gongyoutong.app.ai.VivoOcrService;
 import com.gongyoutong.app.repair.ErrorDetector;
@@ -80,7 +83,9 @@ public class VideoRepairActivity extends AppCompatActivity
     private ImageButton btnSkipStep;
     private ImageButton btnTtsToggle;
     private ImageButton btnTakePhoto;
+    private ImageButton btnGenerateVideo;
     private View btnVoiceInput;
+    private TextView tvJoyAiStatus;
 
     // ========== 核心模块 ==========
     private RepairStateMachine stateMachine;
@@ -90,6 +95,8 @@ public class VideoRepairActivity extends AppCompatActivity
     private RepairLlmService llmService;
     private VivoOcrService ocrService;
     private VisionAnalysisService visionService;
+    private VideoGenerationService videoGenService;
+    private JoyAiVlService joyAiVlService;
 
     // ========== CameraX ==========
     private ExecutorService cameraExecutor;
@@ -131,6 +138,37 @@ public class VideoRepairActivity extends AppCompatActivity
                     new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
                     CAMERA_PERMISSION_CODE);
         }
+
+        // 初始化 JoyAI-VL 会话
+        if (joyAiVlService.isEnabled()) {
+            joyAiVlService.startSession();
+            joyAiVlService.checkHealth(new JoyAiVlService.HealthCallback() {
+                @Override
+                public void onHealthy() {
+                    Log.d(TAG, "JoyAI-VL 服务就绪");
+                    runOnUiThread(() -> {
+                        tvJoyAiStatus.setText("VL: \u2705");
+                        tvJoyAiStatus.setTextColor(0xFF4CAF50);
+                        Toast.makeText(VideoRepairActivity.this,
+                                "JoyAI-VL 实时指导已连接", Toast.LENGTH_SHORT).show();
+                    });
+                }
+
+                @Override
+                public void onUnhealthy(String msg) {
+                    Log.w(TAG, "JoyAI-VL 服务不可用: " + msg);
+                    runOnUiThread(() -> {
+                        tvJoyAiStatus.setText("VL: \u274C");
+                        tvJoyAiStatus.setTextColor(0x80FFFFFF);
+                        Toast.makeText(VideoRepairActivity.this,
+                                "JoyAI-VL 服务未连接，使用本地分析", Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
+        } else {
+            tvJoyAiStatus.setText("VL: OFF");
+            tvJoyAiStatus.setTextColor(0x80FFFFFF);
+        }
     }
 
     @Override
@@ -159,6 +197,10 @@ public class VideoRepairActivity extends AppCompatActivity
         if (cameraExecutor != null) {
             cameraExecutor.shutdown();
         }
+        // 结束 JoyAI-VL 会话
+        if (joyAiVlService != null && joyAiVlService.isSessionActive()) {
+            joyAiVlService.endSession();
+        }
     }
 
     // ========================================================================
@@ -177,7 +219,9 @@ public class VideoRepairActivity extends AppCompatActivity
         btnSkipStep = findViewById(R.id.btnSkipStep);
         btnTtsToggle = findViewById(R.id.btnTtsToggle);
         btnTakePhoto = findViewById(R.id.btnTakePhoto);
+        btnGenerateVideo = findViewById(R.id.btnGenerateVideo);
         btnVoiceInput = findViewById(R.id.btnVoiceInput);
+        tvJoyAiStatus = findViewById(R.id.tvJoyAiStatus);
     }
 
     /** 初始化所有核心模块 */
@@ -195,6 +239,8 @@ public class VideoRepairActivity extends AppCompatActivity
         llmService = RepairLlmService.getInstance();
         ocrService = VivoOcrService.getInstance();
         visionService = VisionAnalysisService.getInstance();
+        videoGenService = VideoGenerationService.getInstance();
+        joyAiVlService = JoyAiVlService.getInstance();
 
         voiceManager = new VoiceInteractionManager(stateMachine);
         voiceManager.setCallback(new VoiceInteractionManager.VoiceCallback() {
@@ -296,6 +342,9 @@ public class VideoRepairActivity extends AppCompatActivity
 
         // 拍照（保存当前帧到相册）
         btnTakePhoto.setOnClickListener(v -> capturePhoto());
+
+        // 生成维修指导视频
+        btnGenerateVideo.setOnClickListener(v -> generateRepairVideo());
     }
 
     // ========================================================================
@@ -341,6 +390,68 @@ public class VideoRepairActivity extends AppCompatActivity
                         runOnUiThread(() ->
                             Toast.makeText(VideoRepairActivity.this,
                                     "拍照失败: " + exception.getMessage(), Toast.LENGTH_SHORT).show());
+                    }
+                });
+    }
+
+    // ========================================================================
+    // 视频生成
+    // ========================================================================
+
+    /**
+     * 生成维修指导视频
+     * 根据当前故障描述和维修步骤生成视频
+     */
+    private void generateRepairVideo() {
+        // 构建视频描述
+        StringBuilder videoPrompt = new StringBuilder();
+        videoPrompt.append("这是一个设备维修指导视频。");
+
+        if (!faultDescription.isEmpty()) {
+            videoPrompt.append("故障描述：").append(faultDescription).append("。");
+        }
+
+        RepairStep currentStep = stateMachine.getCurrentStep();
+        if (currentStep != null) {
+            videoPrompt.append("当前步骤：").append(currentStep.getTitle())
+                    .append(" - ").append(currentStep.getDescription()).append("。");
+        }
+
+        videoPrompt.append("请生成一个清晰的维修操作演示视频，包含工具使用和安全注意事项。");
+
+        // 显示加载状态
+        tvGuideText.setText(getString(R.string.video_repair_generating_video));
+        btnGenerateVideo.setEnabled(false);
+
+        videoGenService.generateFromText(videoPrompt.toString(),
+                new VideoGenerationService.VideoGenerationCallback() {
+                    @Override
+                    public void onSuccess(String videoUrl) {
+                        runOnUiThread(() -> {
+                            btnGenerateVideo.setEnabled(true);
+                            tvGuideText.setText(getString(R.string.video_repair_video_generated));
+                            Toast.makeText(VideoRepairActivity.this,
+                                    "视频已生成: " + videoUrl, Toast.LENGTH_LONG).show();
+                            // TODO: 播放或保存生成的视频
+                        });
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        runOnUiThread(() -> {
+                            btnGenerateVideo.setEnabled(true);
+                            tvGuideText.setText(getString(R.string.video_repair_error_video_generation));
+                            Toast.makeText(VideoRepairActivity.this,
+                                    getString(R.string.video_repair_error_video_generation) + ": " + msg,
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    }
+
+                    @Override
+                    public void onProgress(String status, int progress) {
+                        runOnUiThread(() -> {
+                            tvGuideText.setText("视频生成中: " + status + " (" + progress + "%)");
+                        });
                     }
                 });
     }
@@ -399,7 +510,9 @@ public class VideoRepairActivity extends AppCompatActivity
 
     /**
      * 帧分析回调（后台线程）。
-     * 根据当前状态决定分析策略：设备识别 → OCR，步骤引导/动作验证 → Vision。
+     * 双通道分析：
+     * - JoyAI-VL：实时主动式指导（独立发送，不阻塞本地分析）
+     * - 本地分析：OCR 设备识别 / Vision 动作验证（降级方案）
      */
     private void analyzeFrame(@NonNull ImageProxy imageProxy) {
         long now = System.currentTimeMillis();
@@ -425,6 +538,44 @@ public class VideoRepairActivity extends AppCompatActivity
 
             RepairState state = stateMachine.getCurrentState();
 
+            // ========== JoyAI-VL 实时主动指导（独立通道） ==========
+            if (joyAiVlService.isEnabled() && joyAiVlService.isSessionActive()) {
+                // 根据当前状态设置用户查询上下文
+                updateJoyAiQuery(state);
+
+                joyAiVlService.sendFrame(base64, new JoyAiVlService.JoyAiCallback() {
+                    @Override
+                    public void onProactiveGuidance(String guidance) {
+                        // 模型主动开口指导
+                        runOnUiThread(() -> {
+                            tvGuideText.setText(guidance);
+                            voiceManager.speak(guidance);
+                        });
+                    }
+
+                    @Override
+                    public void onQueryResponse(String response) {
+                        // 对用户查询的响应
+                        runOnUiThread(() -> {
+                            tvGuideText.setText(response);
+                            voiceManager.speak(response);
+                        });
+                    }
+
+                    @Override
+                    public void onSilent() {
+                        // 模型判断当前无需指导，静默
+                        Log.d(TAG, "JoyAI-VL: 当前帧无需指导");
+                    }
+
+                    @Override
+                    public void onError(String msg) {
+                        Log.w(TAG, "JoyAI-VL 分析失败: " + msg);
+                    }
+                });
+            }
+
+            // ========== 本地分析（降级方案，保留原有逻辑） ==========
             if (state == RepairState.DEVICE_IDENTIFY) {
                 // 设备识别阶段：跑 OCR 提取铭牌文字
                 ocrService.recognize(base64, new VivoOcrService.OcrCallback() {
@@ -490,6 +641,50 @@ public class VideoRepairActivity extends AppCompatActivity
             isProcessing.set(false);
         } finally {
             imageProxy.close();
+        }
+    }
+
+    /**
+     * 根据当前维修状态更新 JoyAI-VL 的用户查询上下文
+     */
+    private void updateJoyAiQuery(RepairState state) {
+        switch (state) {
+            case DEVICE_IDENTIFY:
+                joyAiVlService.setUserQuery("请观察设备铭牌，识别设备型号");
+                break;
+            case FAULT_DIAGNOSIS:
+                if (!faultDescription.isEmpty()) {
+                    joyAiVlService.setUserQuery("故障描述: " + faultDescription + "，请分析故障原因");
+                } else {
+                    joyAiVlService.setUserQuery("请观察设备状态，帮助用户诊断故障");
+                }
+                break;
+            case STEP_GUIDE:
+                RepairStep step = stateMachine.getCurrentStep();
+                if (step != null) {
+                    joyAiVlService.setUserQuery(
+                            "当前维修步骤: " + step.getTitle() + " - " + step.getDescription() +
+                            "，请观察操作是否正确，如有错误请指出");
+                }
+                break;
+            case ACTION_VERIFY:
+                RepairStep verifyStep = stateMachine.getCurrentStep();
+                if (verifyStep != null) {
+                    joyAiVlService.setUserQuery(
+                            "请验证操作: " + verifyStep.getTitle() +
+                            "，所需工具: " + verifyStep.getToolRequired() +
+                            "，安全提示: " + verifyStep.getSafetyNote());
+                }
+                break;
+            case ERROR_CORRECT:
+                joyAiVlService.setUserQuery("检测到操作错误，请指导纠正");
+                break;
+            case COMPLETION_CHECK:
+                joyAiVlService.setUserQuery("维修步骤已完成，请检查维修结果是否正常");
+                break;
+            default:
+                joyAiVlService.setUserQuery("");
+                break;
         }
     }
 

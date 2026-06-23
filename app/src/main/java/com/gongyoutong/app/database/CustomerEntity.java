@@ -23,6 +23,17 @@ public class CustomerEntity {
 
     private int orderCount;
 
+    /** 客户标签：高价值/普通/易爽约/企业客户 */
+    private String tag;
+    /** 服务次数 */
+    private int serviceCount;
+    /** 总消费金额 */
+    private double totalSpent;
+    /** 最后服务时间 */
+    private long lastServiceTime;
+    /** 备注 */
+    private String notes;
+
     private long createdAt;
     private long updatedAt;
 
@@ -88,6 +99,21 @@ public class CustomerEntity {
     public void setOrderCount(int orderCount) {
         this.orderCount = orderCount;
     }
+
+    public String getTag() { return tag; }
+    public void setTag(String tag) { this.tag = tag; }
+
+    public int getServiceCount() { return serviceCount; }
+    public void setServiceCount(int serviceCount) { this.serviceCount = serviceCount; }
+
+    public double getTotalSpent() { return totalSpent; }
+    public void setTotalSpent(double totalSpent) { this.totalSpent = totalSpent; }
+
+    public long getLastServiceTime() { return lastServiceTime; }
+    public void setLastServiceTime(long lastServiceTime) { this.lastServiceTime = lastServiceTime; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
     public long getCreatedAt() {
         return createdAt;

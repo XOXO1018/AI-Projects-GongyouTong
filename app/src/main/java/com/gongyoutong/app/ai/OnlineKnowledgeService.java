@@ -4,8 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -223,7 +221,7 @@ public class OnlineKnowledgeService {
 
     private String callLlm(String systemPrompt, String userPrompt) throws Exception {
         JSONObject requestJson = new JSONObject();
-        requestJson.put("model", Config.VIVO_MODEL);
+        requestJson.put("model", AiConfig.VIVO_MODEL);
 
         JSONArray messages = new JSONArray();
         JSONObject sysMsg = new JSONObject();
@@ -243,10 +241,10 @@ public class OnlineKnowledgeService {
 
         RequestBody body = RequestBody.create(requestJson.toString(), JSON_TYPE);
         Request request = new Request.Builder()
-                .url(Config.VIVO_API_URL)
+                .url(AiConfig.VIVO_API_URL)
                 .post(body)
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                .addHeader("Authorization", AiConfig.authHeader())
                 .build();
 
         try (Response response = httpClient.newCall(request).execute()) {

@@ -41,6 +41,9 @@ public class WorkOrderEntity {
     /** 关联日程 ID */
     private String scheduleId;
 
+    /** 工单金额 */
+    private Double amount;
+
     private long createdAt;
     private long updatedAt;
 
@@ -185,6 +188,14 @@ public class WorkOrderEntity {
 
     public void setScheduleId(String scheduleId) {
         this.scheduleId = scheduleId;
+    }
+
+    public Double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(Double amount) {
+        this.amount = amount;
     }
 
     public long getCreatedAt() {

@@ -246,4 +246,10 @@
     <string name="video_repair_complete_title">维修完成</string>
     <string name="video_repair_complete_confirm">确认完成</string>
     <string name="video_repair_report_generating">正在生成维修报告…</string>
+
+    <!-- 视频生成相关字符串 -->
+    <string name="video_repair_generate_video">生成维修指导视频</string>
+    <string name="video_repair_generating_video">AI正在生成维修指导视频…</string>
+    <string name="video_repair_video_generated">维修指导视频已生成</string>
+    <string name="video_repair_error_video_generation">视频生成失败，请重试</string>
 </resources>

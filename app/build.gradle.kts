@@ -55,6 +55,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     // 修复 16 KB 页面大小对齐问题（Android 15+ 要求）
     // 百度地图 SDK 7.6.0 的 .so 库未对齐，使用 legacy packaging 避免安装失败
     packaging {
@@ -122,6 +126,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
 
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20231013")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

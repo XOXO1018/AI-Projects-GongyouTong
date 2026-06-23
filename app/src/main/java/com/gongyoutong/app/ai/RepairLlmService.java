@@ -4,7 +4,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
 import com.gongyoutong.app.repair.RepairIntention;
 import com.gongyoutong.app.repair.RepairStep;
 
@@ -44,7 +43,7 @@ public class RepairLlmService {
     private RepairLlmService() {
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(Config.REPAIR_LLM_STREAM_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(AiConfig.REPAIR_LLM_STREAM_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .retryOnConnectionFailure(false)
                 .build();
@@ -132,7 +131,7 @@ public class RepairLlmService {
         executor.execute(() -> {
             try {
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_MODEL);
+                requestJson.put("model", AiConfig.VIVO_MODEL);
 
                 JSONArray messages = new JSONArray();
 
@@ -156,10 +155,10 @@ public class RepairLlmService {
 
                 RequestBody body = RequestBody.create(requestJson.toString(), JSON_TYPE);
                 Request request = new Request.Builder()
-                        .url(Config.VIVO_API_URL)
+                        .url(AiConfig.VIVO_API_URL)
                         .post(body)
                         .addHeader("Content-Type", "application/json")
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .addHeader("Accept", "text/event-stream")
                         .build();
 
@@ -255,7 +254,7 @@ public class RepairLlmService {
                         + "请为以上设备和故障规划详细的维修步骤列表。";
 
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_MODEL);
+                requestJson.put("model", AiConfig.VIVO_MODEL);
 
                 JSONArray messages = new JSONArray();
 
@@ -316,7 +315,7 @@ public class RepairLlmService {
         executor.execute(() -> {
             try {
                 JSONObject requestJson = new JSONObject();
-                requestJson.put("model", Config.VIVO_MODEL);
+                requestJson.put("model", AiConfig.VIVO_MODEL);
 
                 JSONArray messages = new JSONArray();
 
@@ -373,15 +372,15 @@ public class RepairLlmService {
      */
     private String executeNonStreamRequest(JSONObject requestJson) throws IOException {
         OkHttpClient shortTimeoutClient = httpClient.newBuilder()
-                .readTimeout(Config.REPAIR_LLM_CHAT_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(AiConfig.REPAIR_LLM_CHAT_TIMEOUT, TimeUnit.SECONDS)
                 .build();
 
         RequestBody body = RequestBody.create(requestJson.toString(), JSON_TYPE);
         Request request = new Request.Builder()
-                .url(Config.VIVO_API_URL)
+                .url(AiConfig.VIVO_API_URL)
                 .post(body)
                 .addHeader("Content-Type", "application/json")
-                .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                .addHeader("Authorization", AiConfig.authHeader())
                 .build();
 
         try (Response response = shortTimeoutClient.newCall(request).execute()) {

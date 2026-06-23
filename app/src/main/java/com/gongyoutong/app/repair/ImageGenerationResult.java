@@ -86,12 +86,14 @@ public class ImageGenerationResult {
             result.setCode(root.optInt("code", -1));
             result.setMessage(root.optString("message", ""));
 
-            // 解析 data.images 数组
+            // 解析 data 图片
             JSONObject data = root.optJSONObject("data");
             if (data != null) {
+                List<GeneratedImage> imageList = new ArrayList<>();
+                
+                // 优先解析 data.images 数组
                 JSONArray imagesArray = data.optJSONArray("images");
                 if (imagesArray != null && imagesArray.length() > 0) {
-                    List<GeneratedImage> imageList = new ArrayList<>();
                     for (int i = 0; i < imagesArray.length(); i++) {
                         JSONObject imgObj = imagesArray.getJSONObject(i);
                         GeneratedImage generatedImage = new GeneratedImage();
@@ -99,8 +101,17 @@ public class ImageGenerationResult {
                         generatedImage.setSize(imgObj.optString("size", ""));
                         imageList.add(generatedImage);
                     }
-                    result.setImages(imageList);
+                } else {
+                    // 回退：尝试解析 data.image 字符串（单张图片格式）
+                    String imageUrl = data.optString("image", "");
+                    if (!imageUrl.isEmpty()) {
+                        GeneratedImage generatedImage = new GeneratedImage();
+                        generatedImage.setUrl(imageUrl);
+                        imageList.add(generatedImage);
+                    }
                 }
+                
+                result.setImages(imageList);
             }
 
             return result;

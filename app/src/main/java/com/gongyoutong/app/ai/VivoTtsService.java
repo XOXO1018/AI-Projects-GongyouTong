@@ -6,8 +6,6 @@ import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 
-import com.gongyoutong.app.Config;
-
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -49,7 +47,7 @@ public class VivoTtsService {
     private VivoTtsService() {
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(Config.VIVO_TTS_TIMEOUT, TimeUnit.SECONDS)
+                .readTimeout(AiConfig.VIVO_TTS_TIMEOUT, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .build();
         executor = Executors.newFixedThreadPool(1);
@@ -95,10 +93,10 @@ public class VivoTtsService {
                 String requestId = UUID.randomUUID().toString();
                 String systemTime = String.valueOf(System.currentTimeMillis() / 1000);
 
-                String wsUrl = Config.VIVO_TTS_WS_URL
-                        + "?engineid=" + Config.VIVO_TTS_ENGINE_ID
+                String wsUrl = AiConfig.VIVO_TTS_WS_URL
+                        + "?engineid=" + AiConfig.VIVO_TTS_ENGINE_ID
                         + "&system_time=" + systemTime
-                        + "&user_id=" + Config.VIVO_TTS_USER_ID
+                        + "&user_id=" + AiConfig.VIVO_TTS_USER_ID
                         + "&model=unknown"
                         + "&product=unknown"
                         + "&package=com.gongyoutong.app"
@@ -110,11 +108,11 @@ public class VivoTtsService {
 
                 Request request = new Request.Builder()
                         .url(wsUrl)
-                        .addHeader("Authorization", "Bearer " + Config.VIVO_APP_KEY)
+                        .addHeader("Authorization", AiConfig.authHeader())
                         .addHeader("vaid", "123456789")
                         .build();
 
-                Log.d(TAG, "TTS 连接: engineid=" + Config.VIVO_TTS_ENGINE_ID + ", 文本长度=" + text.length());
+                Log.d(TAG, "TTS 连接: engineid=" + AiConfig.VIVO_TTS_ENGINE_ID + ", 文本长度=" + text.length());
 
                 // 2. 建立 WebSocket 连接
                 CountDownLatch connectLatch = new CountDownLatch(1);
@@ -214,7 +212,7 @@ public class VivoTtsService {
                 }
 
                 // 等待合成完成
-                boolean synthesisOk = completeLatch.await(Config.VIVO_TTS_TIMEOUT, TimeUnit.SECONDS);
+                boolean synthesisOk = completeLatch.await(AiConfig.VIVO_TTS_TIMEOUT, TimeUnit.SECONDS);
                 closeWebSocket();
 
                 if (!synthesisOk || !synthesisComplete.get()) {
@@ -270,7 +268,7 @@ public class VivoTtsService {
             JSONObject req = new JSONObject();
             req.put("aue", 0);                              // PCM
             req.put("auf", "audio/L16;rate=24000");         // 24kHz
-            req.put("vcn", Config.VIVO_TTS_VOICE);
+            req.put("vcn", AiConfig.VIVO_TTS_VOICE);
             req.put("speed", 50);
             req.put("volume", 50);
             req.put("text", encodedText);
@@ -278,7 +276,7 @@ public class VivoTtsService {
             req.put("reqId", System.currentTimeMillis());
 
             ws.send(req.toString());
-            Log.d(TAG, "TTS synthesis request sent, vcn=" + Config.VIVO_TTS_VOICE);
+            Log.d(TAG, "TTS synthesis request sent, vcn=" + AiConfig.VIVO_TTS_VOICE);
         } catch (Exception e) {
             Log.e(TAG, "sendSynthesisRequest error: " + e.getMessage());
         }
@@ -324,7 +322,7 @@ public class VivoTtsService {
             fos = new FileOutputStream(tempFile);
 
             int channels = 1;
-            int sampleRate = Config.VIVO_TTS_SAMPLE_RATE;
+            int sampleRate = AiConfig.VIVO_TTS_SAMPLE_RATE;
             int bitsPerSample = 16;
             int byteRate = sampleRate * channels * bitsPerSample / 8;
             int blockAlign = channels * bitsPerSample / 8;

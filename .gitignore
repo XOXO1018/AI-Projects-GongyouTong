@@ -1,12 +1,8 @@
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+/.idea/
+/.vscode/
 .DS_Store
 /build
 /captures
@@ -21,15 +17,6 @@ app/.cxx/
 
 # Gradle wrapper jar
 gradle/wrapper/gradle-wrapper.jar
-
-# IDE
-.idea/
-.vscode/
-
-# Claude
-.claude/
-.claude/
-skills/
 
 # Python virtual env & cache
 __pycache__/

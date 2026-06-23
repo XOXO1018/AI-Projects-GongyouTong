@@ -151,6 +151,18 @@
             android:parentActivityName=".ui.knowledge.KnowledgeActivity"
             android:theme="@style/Theme.MaterialComponents.Light.NoActionBar" />
 
+        <!-- 客户管理页 -->
+        <activity
+            android:name=".ui.customer.CustomerActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.profile.ProfileActivity" />
+
+        <!-- 收入分析页 -->
+        <activity
+            android:name=".ui.income.IncomeActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.profile.ProfileActivity" />
+
     </application>
 
 </manifest>

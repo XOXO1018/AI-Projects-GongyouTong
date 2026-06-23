@@ -18,7 +18,8 @@ import com.gongyoutong.app.Config;
         WorkOrderEntity.class,
         CustomerEntity.class,
         RepairRecordEntity.class,
-        DiagnosisRecordEntity.class
+        DiagnosisRecordEntity.class,
+        QuotationEntity.class
 }, version = Config.DATABASE_VERSION, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     
@@ -35,6 +36,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract RepairRecordDao repairRecordDao();
 
     public abstract DiagnosisRecordDao diagnosisRecordDao();
+
+    public abstract QuotationDao quotationDao();
     
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
@@ -51,8 +54,12 @@ public abstract class AppDatabase extends RoomDatabase {
                             MigrationV3To4.MIGRATION_3_4,
                             MigrationV4To5.MIGRATION_4_5,
                             MigrationV5To6.MIGRATION_5_6,
-                            MigrationV6To7.MIGRATION_6_7
+                            MigrationV6To7.MIGRATION_6_7,
+                            MigrationV7To8.MIGRATION_7_8,
+                            MigrationV8To9.MIGRATION_8_9,
+                            MigrationV9To10.MIGRATION_9_10
                     )
+                    .fallbackToDestructiveMigration()
                     .build();
                 }
             }
