@@ -10,4 +10,4 @@
   1. `git add -A`
   2. `git commit -m "同步项目到GitHub"`
   3. `git push origin master`
-- GitHub 仓库地址：https://github.com/XOXO1018/AI-Project.git
+- GitHub 仓库地址：https://github.com/XOXO1018/AI-Projects-GongyouTong.git
