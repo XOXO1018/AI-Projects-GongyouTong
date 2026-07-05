@@ -1,6 +1,8 @@
 package com.gongyoutong.app.data;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import com.gongyoutong.app.database.AppDatabase;
 import com.gongyoutong.app.database.ScheduleEntity;
@@ -20,6 +22,7 @@ public class WorkspaceRepository {
     private static volatile WorkspaceRepository INSTANCE;
     private final AppDatabase db;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private WorkspaceRepository(Context context) {
         db = AppDatabase.getInstance(context);
@@ -50,7 +53,7 @@ public class WorkspaceRepository {
             data.pendingOrders = getPendingOrders();
             data.todayIncome = calculateTodayIncome();
             data.urgentTasks = getUrgentTasks();
-            callback.onResult(data);
+            mainHandler.post(() -> callback.onResult(data));
         });
     }
 

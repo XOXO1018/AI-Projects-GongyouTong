@@ -68,4 +68,10 @@ public class IncomeActivity extends AppCompatActivity {
             });
         });
     }
+
+    @Override
+    protected void onDestroy() {
+        executor.shutdown();
+        super.onDestroy();
+    }
 }

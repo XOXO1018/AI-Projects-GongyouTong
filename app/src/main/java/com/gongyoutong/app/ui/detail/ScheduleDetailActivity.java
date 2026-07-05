@@ -110,6 +110,7 @@ public class ScheduleDetailActivity extends AppCompatActivity {
     private boolean isAiExpanded = false;
     private String fullAiReminder = "";
     private boolean isAiStreaming = false;
+    private boolean isActivityActive = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -510,6 +511,7 @@ public class ScheduleDetailActivity extends AppCompatActivity {
                     @Override
                     public void onDelta(String text, boolean isDone) {
                         runOnUiThread(() -> {
+                            if (!isActivityActive) return;
                             fullAiReminder = text;
                             tvAiReminder.setText(text);
 
@@ -536,6 +538,7 @@ public class ScheduleDetailActivity extends AppCompatActivity {
                     @Override
                     public void onError(String errorMessage) {
                         runOnUiThread(() -> {
+                            if (!isActivityActive) return;
                             isAiStreaming = false;
                             pbAiReminder.setVisibility(View.GONE);
                             btnRefreshAi.setEnabled(true);
@@ -978,7 +981,10 @@ public class ScheduleDetailActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        isActivityActive = false;
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
         super.onDestroy();
-        if (executor != null) executor.shutdown();
     }
 }

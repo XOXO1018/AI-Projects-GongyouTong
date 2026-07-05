@@ -30,7 +30,8 @@ public class CustomerAdapter extends RecyclerView.Adapter<CustomerAdapter.ViewHo
     }
 
     public void setList(List<Customer> list) {
-        this.customers = list;
+        this.customers.clear();
+        if (list != null) this.customers.addAll(list);
         notifyDataSetChanged();
     }
 

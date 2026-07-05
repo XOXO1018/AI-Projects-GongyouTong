@@ -68,10 +68,16 @@ public class Quotation {
         public void setName(String name) { this.name = name; }
 
         public int getQuantity() { return quantity; }
-        public void setQuantity(int quantity) { this.quantity = quantity; }
+        public void setQuantity(int quantity) {
+            this.quantity = quantity;
+            this.subtotal = this.quantity * this.unitPrice;
+        }
 
         public double getUnitPrice() { return unitPrice; }
-        public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
+        public void setUnitPrice(double unitPrice) {
+            this.unitPrice = unitPrice;
+            this.subtotal = this.quantity * this.unitPrice;
+        }
 
         public double getSubtotal() { return subtotal; }
         public void setSubtotal(double subtotal) { this.subtotal = subtotal; }

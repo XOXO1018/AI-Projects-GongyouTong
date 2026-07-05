@@ -26,6 +26,7 @@ public class DiagnosisRecordEntity {
     private long createdAt;         // 创建时间戳
 
     public DiagnosisRecordEntity() {
+        this.id = "";
     }
 
     // ==================== Getters ====================

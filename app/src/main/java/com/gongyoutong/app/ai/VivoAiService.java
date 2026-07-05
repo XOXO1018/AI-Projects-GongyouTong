@@ -1,5 +1,7 @@
 package com.gongyoutong.app.ai;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -191,10 +193,57 @@ public class VivoAiService {
             this.content = content;
             this.timestamp = System.currentTimeMillis();
         }
+
+        public JSONObject toJson() throws Exception {
+            JSONObject obj = new JSONObject();
+            obj.put("role", role);
+            obj.put("content", content);
+            obj.put("timestamp", timestamp);
+            return obj;
+        }
+
+        public static ChatMessage fromJson(JSONObject obj) throws Exception {
+            return new ChatMessage(obj.getString("role"), obj.getString("content"));
+        }
     }
 
     private final List<ChatMessage> chatHistory = new ArrayList<>();
     private static final int MAX_HISTORY = 20; // 最多保留 20 轮对话
+    private static final String PREF_CHAT_HISTORY = "ai_chat_history";
+    private static final String KEY_HISTORY = "chat_history_json";
+    private SharedPreferences chatPrefs;
+
+    public void initChatPersistence(Context context) {
+        chatPrefs = context.getSharedPreferences(PREF_CHAT_HISTORY, Context.MODE_PRIVATE);
+        loadChatHistory();
+    }
+
+    private void loadChatHistory() {
+        if (chatPrefs == null) return;
+        try {
+            String json = chatPrefs.getString(KEY_HISTORY, "[]");
+            JSONArray arr = new JSONArray(json);
+            chatHistory.clear();
+            for (int i = 0; i < arr.length(); i++) {
+                chatHistory.add(ChatMessage.fromJson(arr.getJSONObject(i)));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to load chat history", e);
+        }
+    }
+
+    private void saveChatHistory() {
+        if (chatPrefs == null) return;
+        try {
+            JSONArray arr = new JSONArray();
+            for (ChatMessage msg : chatHistory) {
+                arr.put(msg.toJson());
+            }
+            chatPrefs.edit().putString(KEY_HISTORY, arr.toString()).apply();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to save chat history", e);
+        }
+    }
 
     public void addToHistory(String role, String content) {
         chatHistory.add(new ChatMessage(role, content));
@@ -202,10 +251,12 @@ public class VivoAiService {
             // 保留最近的 MAX_HISTORY 轮，去掉最旧的
             chatHistory.subList(0, chatHistory.size() - MAX_HISTORY * 2).clear();
         }
+        saveChatHistory();
     }
 
     public void clearHistory() {
         chatHistory.clear();
+        saveChatHistory();
     }
 
     public List<ChatMessage> getHistory() {

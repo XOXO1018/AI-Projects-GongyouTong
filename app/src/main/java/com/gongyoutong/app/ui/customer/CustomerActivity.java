@@ -174,4 +174,12 @@ public class CustomerActivity extends AppCompatActivity {
         builder.setNegativeButton("取消", null);
         builder.show();
     }
+
+    @Override
+    protected void onDestroy() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
+        super.onDestroy();
+    }
 }

@@ -96,6 +96,7 @@ public class SettingsActivity extends AppCompatActivity {
     private LinearLayout rgThemeMode;
     private RadioButton rbDay, rbNight, rbSystem;
     private RadioButton rbNormal, rbSatellite, rbTraffic;
+    private BDLocationListener locationListener;
 
     // === 百度地图 SDK 两个核心初始化方法 ===
     // SDKInitializer.setAgreePrivacy()  和 SDKInitializer.initialize()
@@ -448,7 +449,7 @@ public class SettingsActivity extends AppCompatActivity {
         Log.d(TAG, "LocationClientOption 配置完成");
 
         // 注册定位回调 — 必须在 start() 之前注册
-        locationClient.registerLocationListener(new BDLocationListener() {
+        locationListener = new BDLocationListener() {
             @Override
             public void onReceiveLocation(BDLocation bdLocation) {
                 if (bdLocation == null || mapView == null) {
@@ -520,7 +521,8 @@ public class SettingsActivity extends AppCompatActivity {
                 // 诊断信息回调
                 Log.w(TAG, "定位诊断: type=" + locType + ", diag=" + diagnosticType + ", msg=" + diagnosticMessage);
             }
-        });
+        };
+        locationClient.registerLocationListener(locationListener);
 
         // 启动定位服务
         locationClient.start();
@@ -577,8 +579,14 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        if (locationClient != null) locationClient.stop();
+        mainHandler.removeCallbacksAndMessages(null);
+        if (locationClient != null) {
+            if (locationListener != null) {
+                locationClient.unRegisterLocationListener(locationListener);
+            }
+            locationClient.stop();
+        }
         if (mapView != null) mapView.onDestroy();
+        super.onDestroy();
     }
 }

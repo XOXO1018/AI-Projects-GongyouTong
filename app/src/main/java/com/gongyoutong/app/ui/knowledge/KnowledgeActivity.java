@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -35,6 +36,7 @@ import com.gongyoutong.app.ai.OnlineKnowledgeService;
 import com.gongyoutong.app.ai.OnlineKnowledgeService.OnlineKnowledgeItem;
 import com.gongyoutong.app.ai.VivoAiService;
 import com.gongyoutong.app.ai.VivoAsrService;
+import com.gongyoutong.app.ai.VivoOcrService;
 import com.gongyoutong.app.data.KnowledgeAdapter;
 import com.gongyoutong.app.data.OnlineKnowledgeAdapter;
 import com.gongyoutong.app.database.AppDatabase;
@@ -60,6 +62,7 @@ import java.util.concurrent.Executors;
 
 public class KnowledgeActivity extends AppCompatActivity {
 
+    private static final String TAG = "KnowledgeActivity";
     private static final int REQ_RECORD_AUDIO = 2001;
     private static final int REQ_CAMERA = 2002;
     private static final int TAB_LOCAL = 0;
@@ -85,6 +88,7 @@ public class KnowledgeActivity extends AppCompatActivity {
     private KnowledgeDao knowledgeDao;
     private VivoAiService aiService;
     private VivoAsrService asrService;
+    private VivoOcrService ocrService;
     private OnlineKnowledgeService onlineService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -106,6 +110,7 @@ public class KnowledgeActivity extends AppCompatActivity {
         knowledgeDao = database.knowledgeDao();
         aiService = new VivoAiService();
         asrService = new VivoAsrService();
+        ocrService = VivoOcrService.getInstance();
         onlineService = OnlineKnowledgeService.getInstance();
 
         initViews();
@@ -229,7 +234,11 @@ public class KnowledgeActivity extends AppCompatActivity {
                         if (result.getData() != null && result.getData().getExtras() != null) {
                             bitmap = (Bitmap) result.getData().getExtras().get("data");
                         }
-                        showManualInputDialog("photo", bitmap != null ? "（图片内容，请手动补充描述）" : "");
+                        if (bitmap != null) {
+                            performOcrOnBitmap(bitmap);
+                        } else {
+                            showManualInputDialog("photo", "");
+                        }
                     }
                 });
         documentLauncher = registerForActivityResult(
@@ -417,7 +426,87 @@ public class KnowledgeActivity extends AppCompatActivity {
     private void launchGallery() {
         galleryLauncher.launch(new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI));
     }
-    private void handlePhotoUri(Uri uri) { showManualInputDialog("photo", ""); }
+
+    private void handlePhotoUri(Uri uri) {
+        Toast.makeText(this, "正在识别图片文字...", Toast.LENGTH_SHORT).show();
+
+        executor.execute(() -> {
+            String base64Image = null;
+            try (InputStream is = getContentResolver().openInputStream(uri)) {
+                if (is != null) {
+                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int len;
+                    while ((len = is.read(buffer)) != -1) {
+                        baos.write(buffer, 0, len);
+                    }
+                    byte[] imageBytes = baos.toByteArray();
+                    base64Image = android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP);
+                }
+            } catch (IOException e) {
+                runOnUiThread(() -> Toast.makeText(this, "图片读取失败", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            if (base64Image == null || base64Image.isEmpty()) {
+                runOnUiThread(() -> Toast.makeText(this, "图片数据为空", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            ocrService.recognize(base64Image, new VivoOcrService.OcrCallback() {
+                @Override
+                public void onSuccess(String ocrText) {
+                    runOnUiThread(() -> {
+                        String prefill = ocrText != null && !ocrText.isEmpty() ? ocrText : "";
+                        if (prefill.isEmpty()) {
+                            Toast.makeText(KnowledgeActivity.this, "未识别到文字，请手动输入", Toast.LENGTH_SHORT).show();
+                        }
+                        showManualInputDialog("photo", prefill);
+                    });
+                }
+
+                @Override
+                public void onError(String msg) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(KnowledgeActivity.this, "OCR识别失败: " + msg + "，请手动输入", Toast.LENGTH_SHORT).show();
+                        showManualInputDialog("photo", "");
+                    });
+                }
+            });
+        });
+    }
+
+    private void performOcrOnBitmap(Bitmap bitmap) {
+        Toast.makeText(this, "正在识别图片文字...", Toast.LENGTH_SHORT).show();
+
+        executor.execute(() -> {
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, baos);
+            byte[] imageBytes = baos.toByteArray();
+            String base64Image = android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP);
+
+            ocrService.recognize(base64Image, new VivoOcrService.OcrCallback() {
+                @Override
+                public void onSuccess(String ocrText) {
+                    runOnUiThread(() -> {
+                        String prefill = ocrText != null && !ocrText.isEmpty() ? ocrText : "";
+                        if (prefill.isEmpty()) {
+                            Toast.makeText(KnowledgeActivity.this, "未识别到文字，请手动输入", Toast.LENGTH_SHORT).show();
+                        }
+                        showManualInputDialog("photo", prefill);
+                    });
+                }
+
+                @Override
+                public void onError(String msg) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(KnowledgeActivity.this, "OCR识别失败: " + msg + "，请手动输入", Toast.LENGTH_SHORT).show();
+                        showManualInputDialog("photo", "");
+                    });
+                }
+            });
+        });
+    }
 
     private void openDocumentPicker() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -432,23 +521,86 @@ public class KnowledgeActivity extends AppCompatActivity {
 
     private void handleDocumentUri(Uri uri) {
         executor.execute(() -> {
-            StringBuilder sb = new StringBuilder();
-            try (InputStream is = getContentResolver().openInputStream(uri)) {
-                if (is != null) {
-                    BufferedReader r = new BufferedReader(new InputStreamReader(is));
-                    String line; while ((line = r.readLine()) != null) sb.append(line).append("\n");
+            try {
+                String mimeType = getContentResolver().getType(uri);
+                com.gongyoutong.app.util.DocumentParser.ParseResult result =
+                    com.gongyoutong.app.util.DocumentParser.parseDocument(this, uri, mimeType);
+
+                if (result.isPdf()) {
+                    // PDF 文件：需要对每页进行 OCR 识别
+                    runOnUiThread(() -> processPdfWithOcr(result));
+                } else {
+                    // 纯文本或 DOCX：直接使用文本内容
+                    String content = result.text;
+                    if (content == null || content.isEmpty()) {
+                        runOnUiThread(() -> Toast.makeText(this, "文档内容为空", Toast.LENGTH_SHORT).show());
+                        return;
+                    }
+                    runOnUiThread(() -> saveLocalKnowledge("document", content));
                 }
-            } catch (IOException e) {
-                runOnUiThread(() -> Toast.makeText(this, "文档读取失败", Toast.LENGTH_LONG).show());
-                return;
+            } catch (Exception e) {
+                Log.e(TAG, "文档解析失败: " + e.getMessage());
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "文档解析失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
             }
-            String content = sb.toString().trim();
-            if (content.isEmpty()) {
-                runOnUiThread(() -> Toast.makeText(this, "文档内容为空", Toast.LENGTH_SHORT).show());
-                return;
-            }
-            runOnUiThread(() -> saveLocalKnowledge("document", content));
         });
+    }
+
+    /**
+     * 处理 PDF 文件：逐页 OCR 识别
+     */
+    private void processPdfWithOcr(com.gongyoutong.app.util.DocumentParser.ParseResult pdfResult) {
+        if (pdfResult.pages == null || pdfResult.pages.isEmpty()) {
+            Toast.makeText(this, "PDF 无内容", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Toast.makeText(this, "PDF 共 " + pdfResult.pageCount + " 页，正在 OCR 识别...", Toast.LENGTH_SHORT).show();
+
+        StringBuilder allText = new StringBuilder();
+        allText.append("【PDF文档】共").append(pdfResult.pageCount).append("页\n\n");
+
+        VivoOcrService ocrService = VivoOcrService.getInstance();
+        int[] pageCounter = {0};
+
+        for (int i = 0; i < pdfResult.pages.size(); i++) {
+            final int pageIndex = i;
+            android.graphics.Bitmap pageBitmap = pdfResult.pages.get(i);
+
+            // 将 Bitmap 转为 Base64
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            pageBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, baos);
+            byte[] imageBytes = baos.toByteArray();
+            String base64Image = android.util.Base64.encodeToString(imageBytes, android.util.Base64.NO_WRAP);
+
+            ocrService.recognize(base64Image, new VivoOcrService.OcrCallback() {
+                @Override
+                public void onSuccess(String ocrText) {
+                    allText.append("--- 第").append(pageIndex + 1).append("页 ---\n");
+                    allText.append(ocrText).append("\n\n");
+                    pageCounter[0]++;
+
+                    // 所有页处理完成
+                    if (pageCounter[0] >= pdfResult.pageCount) {
+                        com.gongyoutong.app.util.DocumentParser.releaseBitmaps(pdfResult);
+                        saveLocalKnowledge("document", allText.toString());
+                    }
+                }
+
+                @Override
+                public void onError(String msg) {
+                    allText.append("--- 第").append(pageIndex + 1).append("页 ---\n");
+                    allText.append("（OCR识别失败: ").append(msg).append("）\n\n");
+                    pageCounter[0]++;
+
+                    if (pageCounter[0] >= pdfResult.pageCount) {
+                        com.gongyoutong.app.util.DocumentParser.releaseBitmaps(pdfResult);
+                        saveLocalKnowledge("document", allText.toString());
+                    }
+                }
+            });
+        }
     }
 
     private void showManualInputDialog(String sourceType, String prefill) {
@@ -537,8 +689,11 @@ public class KnowledgeActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        if (inputDialog != null && inputDialog.isShowing()) {
+            inputDialog.dismiss();
+        }
         if (asrService != null) asrService.destroy();
         if (executor != null) executor.shutdown();
+        super.onDestroy();
     }
 }

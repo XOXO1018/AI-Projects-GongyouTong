@@ -108,7 +108,8 @@ public class BaiduNavigationActivity extends AppCompatActivity {
     private boolean isGeoCoderReady = false;
     private boolean isRouteSearchReady = false;
     private boolean isLocationReady = false;
-    private boolean isActivityActive = true;
+    private volatile boolean isActivityActive = true;
+    private BDLocationListener locationListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -471,7 +472,7 @@ public class BaiduNavigationActivity extends AppCompatActivity {
             locationClient.setLocOption(option);
             Log.d(TAG, "LocationClientOption configured");
 
-            locationClient.registerLocationListener(new BDLocationListener() {
+            locationListener = new BDLocationListener() {
                 @Override
                 public void onReceiveLocation(BDLocation bdLocation) {
                     if (!isActivityActive() || bdLocation == null) {
@@ -519,7 +520,8 @@ public class BaiduNavigationActivity extends AppCompatActivity {
                     Log.w(TAG, "Location diagnostics: type=" + locType +
                         ", diag=" + diagnosticType + ", msg=" + diagnosticMessage);
                 }
-            });
+            };
+            locationClient.registerLocationListener(locationListener);
 
             Log.d(TAG, "Location listener registered");
 
@@ -1062,11 +1064,9 @@ public class BaiduNavigationActivity extends AppCompatActivity {
                 if (locationClient.isStarted()) {
                     locationClient.stop();
                 }
-                locationClient.unRegisterLocationListener(new BDLocationListener() {
-                    public void onReceiveLocation(BDLocation bdLocation) {}
-                    public void onConnectHotSpotMessage(String s, String s1) {}
-                    public void onLocDiagnosticMessage(int locType, int diagnosticType, String diagnosticMessage) {}
-                });
+                if (locationListener != null) {
+                    locationClient.unRegisterLocationListener(locationListener);
+                }
             } catch (Exception e) {
                 Log.w(TAG, "LocationClient cleanup failed: " + e.getMessage());
             }

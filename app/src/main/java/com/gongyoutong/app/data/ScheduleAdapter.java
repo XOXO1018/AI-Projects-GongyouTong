@@ -142,7 +142,10 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
 
         holder.itemView.setOnLongClickListener(v -> {
             if (deleteListener != null) {
-                deleteListener.onDelete(item, position);
+                int pos = holder.getBindingAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    deleteListener.onDelete(item, pos);
+                }
             }
             return true;
         });
@@ -211,13 +214,6 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
 
         String timeStr = TIME_FORMAT.get().format(time);
         String periodStr = PERIOD_FORMAT.get().format(time);
-
-        // 转换上午/下午为中文
-        if ("AM".equals(periodStr)) {
-            periodStr = "上午";
-        } else if ("PM".equals(periodStr)) {
-            periodStr = "下午";
-        }
 
         tvTimeValue.setText(timeStr);
         tvTimePeriod.setText(periodStr);

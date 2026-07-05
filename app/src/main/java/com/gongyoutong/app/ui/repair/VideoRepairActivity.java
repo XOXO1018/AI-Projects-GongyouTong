@@ -191,6 +191,9 @@ public class VideoRepairActivity extends AppCompatActivity
         super.onDestroy();
         // 重置处理标志，防止帧分析卡死
         isProcessing.set(false);
+        if (stateMachine != null) {
+            stateMachine.removeListener(this);
+        }
         if (voiceManager != null) {
             voiceManager.release();
         }
@@ -695,6 +698,7 @@ public class VideoRepairActivity extends AppCompatActivity
      * @return Base64 编码的 JPEG 数据，失败返回 null
      */
     private String imageProxyToBase64(ImageProxy image) {
+        ByteArrayOutputStream out = null;
         try {
             ImageProxy.PlaneProxy[] planes = image.getPlanes();
             if (planes.length < 3) {
@@ -718,7 +722,7 @@ public class VideoRepairActivity extends AppCompatActivity
             android.graphics.YuvImage yuvImage = new android.graphics.YuvImage(
                     nv21, android.graphics.ImageFormat.NV21,
                     image.getWidth(), image.getHeight(), null);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            out = new ByteArrayOutputStream();
             yuvImage.compressToJpeg(
                     new android.graphics.Rect(0, 0, image.getWidth(), image.getHeight()),
                     Config.CAMERA_FRAME_QUALITY, out);
@@ -728,6 +732,10 @@ public class VideoRepairActivity extends AppCompatActivity
         } catch (Exception e) {
             Log.e(TAG, "帧转 Base64 失败: " + e.getMessage());
             return null;
+        } finally {
+            if (out != null) {
+                try { out.close(); } catch (Exception ignored) {}
+            }
         }
     }
 

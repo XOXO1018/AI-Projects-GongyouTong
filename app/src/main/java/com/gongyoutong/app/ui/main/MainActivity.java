@@ -70,13 +70,14 @@ public class MainActivity extends AppCompatActivity {
 
     private EditText etInput;
     private ImageView btnSend, btnVoice, btnImage;
-    private TextView tvVoiceStatus, tvAiReply, tvAiReplyTime;
-    private RecyclerView rvSchedule;
+    private TextView tvVoiceStatus;
+    private RecyclerView rvSchedule, rvChatHistory;
     private TextView tvScheduleCount;
     private View loadingView;
-    private LinearLayout layoutEmpty, layoutAiReply;
+    private LinearLayout layoutEmpty;
     private MaterialCardView chatInputCard;
     private ScheduleAdapter adapter;
+    private ChatAdapter chatAdapter;
     private final List<Schedule> scheduleList = new ArrayList<>();
 
     private AppDatabase database;
@@ -92,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
     // 语音识别状态
     private boolean isListening = false;
+    private boolean isActivityActive = true;
     private String asrAccumulatedText = "";
 
     @Override
@@ -105,9 +107,13 @@ public class MainActivity extends AppCompatActivity {
         database = AppDatabase.getInstance(this);
         scheduleDao = database.scheduleDao();
         aiService = new VivoAiService();
+        aiService.initChatPersistence(this);
         asrService = new VivoAsrService();
         imageGenerationService = ImageGenerationService.getInstance();
         workspaceRepository = WorkspaceRepository.getInstance(this);
+
+        // 预置演示数据（首次启动时）
+        new com.gongyoutong.app.database.DemoDataSeeder(this).seedIfNeeded();
 
         initViews();
         setupWindowInsets();
@@ -127,13 +133,19 @@ public class MainActivity extends AppCompatActivity {
         btnImage = findViewById(R.id.btnImage);
         tvVoiceStatus = findViewById(R.id.tvVoiceStatus);
         rvSchedule = findViewById(R.id.rvSchedule);
+        rvChatHistory = findViewById(R.id.rvChatHistory);
         tvScheduleCount = findViewById(R.id.tvScheduleCount);
         loadingView = findViewById(R.id.loadingView);
         layoutEmpty = findViewById(R.id.layoutEmpty);
         chatInputCard = findViewById(R.id.chatInputCard);
-        layoutAiReply = findViewById(R.id.layoutAiReply);
-        tvAiReply = findViewById(R.id.tvAiReply);
-        tvAiReplyTime = findViewById(R.id.tvAiReplyTime);
+
+        // 初始化聊天历史适配器
+        chatAdapter = new ChatAdapter();
+        rvChatHistory.setLayoutManager(new LinearLayoutManager(this));
+        rvChatHistory.setAdapter(chatAdapter);
+
+        // 加载历史对话
+        loadChatHistory();
 
         // 工作台视图
         tvPendingOrders = findViewById(R.id.tvPendingOrders);
@@ -144,10 +156,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupWindowInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(chatInputCard, (v, insets) -> {
+        // 处理底部导航栏的 insets（系统导航栏）
+        BottomNavigationView nav = findViewById(R.id.bottomNav);
+        ViewCompat.setOnApplyWindowInsetsListener(nav, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            int bottom = systemBars.bottom;
-            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), bottom + 8);
+            v.setPadding(0, 0, 0, systemBars.bottom);
+            return insets;
+        });
+
+        // 处理输入框的 insets（键盘弹出时上移）
+        ViewCompat.setOnApplyWindowInsetsListener(chatInputCard, (v, insets) -> {
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            int imeHeight = ime.bottom;
+            // 键盘弹出时，给输入框添加底部 margin 使其上移
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) v.getLayoutParams();
+            if (imeHeight > 0) {
+                params.bottomMargin = imeHeight;
+            } else {
+                params.bottomMargin = 0;
+            }
+            v.setLayoutParams(params);
+            return insets;
+        });
+
+        // 处理滚动内容区域的顶部 insets（状态栏）
+        View scrollView = findViewById(R.id.scrollView);
+        ViewCompat.setOnApplyWindowInsetsListener(scrollView, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(v.getPaddingLeft(), systemBars.top, v.getPaddingRight(), v.getPaddingBottom());
             return insets;
         });
     }
@@ -431,8 +467,7 @@ public class MainActivity extends AppCompatActivity {
                         adapter.setList(new ArrayList<>(scheduleList));
                         updateEmptyState();
 
-                        // 隐藏对话气泡
-                        layoutAiReply.setVisibility(View.GONE);
+                        // 日程模式不需要显示聊天区域
 
                         // 根据 AI 来源显示不同提示
                         if (source == VivoAiService.AiSource.CLOUD_AI_SUCCESS) {
@@ -466,17 +501,18 @@ public class MainActivity extends AppCompatActivity {
      * 问答模式：流式输出，不显示全屏 loading
      */
     private void handleChatModeStream(String text) {
+        // 保存用户消息到历史
+        aiService.addToHistory("user", text);
+
+        // 显示聊天区域并添加用户消息
+        rvChatHistory.setVisibility(View.VISIBLE);
+        chatAdapter.addMessage(new VivoAiService.ChatMessage("user", text));
+        chatAdapter.addMessage(new VivoAiService.ChatMessage("assistant", ""));
+        rvChatHistory.scrollToPosition(chatAdapter.getLastPosition());
+
         // 显示轻量 loading 提示
         tvVoiceStatus.setVisibility(View.VISIBLE);
         tvVoiceStatus.setText("蓝心大模型思考中...");
-
-        // 先清空并显示回复区域
-        tvAiReply.setText("");
-        layoutAiReply.setVisibility(View.VISIBLE);
-        
-        // 隐藏之前可能显示的图片
-        ImageView ivGeneratedImage = findViewById(R.id.ivGeneratedImage);
-        ivGeneratedImage.setVisibility(View.GONE);
 
         aiService.chatWithAiStream(text, new VivoAiService.StreamChatCallback() {
             @Override
@@ -489,13 +525,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDelta(String currentText, boolean isDone) {
                 runOnUiThread(() -> {
-                    tvAiReply.setText(currentText);
+                    if (!isActivityActive) return;
+                    // 实时更新最后一条AI消息
+                    chatAdapter.updateLastMessage(currentText);
+                    rvChatHistory.scrollToPosition(chatAdapter.getLastPosition());
                     if (isDone) {
-                        // 完成：更新时间戳，隐藏 loading 提示
-                        String timeStr = new SimpleDateFormat("HH:mm", Locale.CHINA).format(new Date());
-                        tvAiReplyTime.setText(timeStr);
+                        // 完成：保存AI回复到历史
+                        aiService.addToHistory("assistant", currentText);
                         tvVoiceStatus.setVisibility(View.GONE);
-                        // Toast.makeText(MainActivity.this, "✓ 回复完成", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -503,13 +540,27 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onError(String errorMessage) {
                 runOnUiThread(() -> {
+                    if (!isActivityActive) return;
                     tvVoiceStatus.setVisibility(View.GONE);
-                    layoutAiReply.setVisibility(View.GONE);
+                    // 移除空的AI回复气泡
+                    chatAdapter.removeLastMessage();
                     etInput.setText(text);
                     Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_LONG).show();
                 });
             }
         });
+    }
+
+    /**
+     * 加载历史对话到聊天区域
+     */
+    private void loadChatHistory() {
+        List<VivoAiService.ChatMessage> history = aiService.getHistory();
+        if (!history.isEmpty()) {
+            chatAdapter.setMessages(history);
+            rvChatHistory.setVisibility(View.VISIBLE);
+            rvChatHistory.scrollToPosition(chatAdapter.getLastPosition());
+        }
     }
 
     // ==================== 数据加载 ====================
@@ -731,9 +782,11 @@ public class MainActivity extends AppCompatActivity {
         tvVoiceStatus.setVisibility(View.VISIBLE);
         tvVoiceStatus.setText("蓝心大模型正在生成图片...");
 
-        // 先清空并显示回复区域
-        tvAiReply.setText("正在生成图片: " + text);
-        layoutAiReply.setVisibility(View.VISIBLE);
+        // 显示聊天区域并添加消息
+        rvChatHistory.setVisibility(View.VISIBLE);
+        chatAdapter.addMessage(new VivoAiService.ChatMessage("user", "生成图片: " + text));
+        chatAdapter.addMessage(new VivoAiService.ChatMessage("assistant", "正在生成图片..."));
+        rvChatHistory.scrollToPosition(chatAdapter.getLastPosition());
 
         // 调用图片生成服务
         String prompt = "根据以下描述生成图片: " + text;
@@ -743,14 +796,12 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     tvVoiceStatus.setVisibility(View.GONE);
                     
-                    // 显示第一张图片
+                    // 更新AI回复为图片链接
                     if (!imageUrls.isEmpty()) {
-                        displayGeneratedImage(imageUrls.get(0), text);
+                        chatAdapter.updateLastMessage("图片已生成: " + imageUrls.get(0));
                     }
                     
-                    // 更新时间
-                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-                    tvAiReplyTime.setText(sdf.format(new Date()));
+                    rvChatHistory.scrollToPosition(chatAdapter.getLastPosition());
                 });
             }
 
@@ -758,46 +809,22 @@ public class MainActivity extends AppCompatActivity {
             public void onError(String msg) {
                 runOnUiThread(() -> {
                     tvVoiceStatus.setVisibility(View.GONE);
-                    tvAiReply.setText("图片生成失败: " + msg);
+                    chatAdapter.updateLastMessage("图片生成失败: " + msg);
                     Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
                 });
             }
         });
     }
 
-    /**
-     * 显示生成的图片
-     */
-    private void displayGeneratedImage(String imageUrl, String prompt) {
-        // 获取图片显示控件
-        ImageView ivGeneratedImage = findViewById(R.id.ivGeneratedImage);
-        
-        // 显示图片区域
-        ivGeneratedImage.setVisibility(View.VISIBLE);
-        
-        // 更新文本回复
-        tvAiReply.setText("已生成图片: " + prompt);
-        
-        // 使用Glide加载图片
-        try {
-            Glide.with(this)
-                .load(imageUrl)
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .placeholder(R.drawable.ic_image)
-                .error(R.drawable.ic_image)
-                .into(ivGeneratedImage);
-        } catch (Exception e) {
-            tvAiReply.setText("图片加载失败: " + e.getMessage());
-            ivGeneratedImage.setVisibility(View.GONE);
-        }
-    }
-
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        isActivityActive = false;
         if (asrService != null) {
             asrService.destroy();
         }
-        if (executor != null) executor.shutdown();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
+        super.onDestroy();
     }
 }

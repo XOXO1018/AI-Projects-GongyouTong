@@ -175,11 +175,13 @@ public class RepairActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         if (asrService != null) {
             asrService.destroy();
         }
-        if (executor != null) executor.shutdown();
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
+        super.onDestroy();
     }
 
     // ==================== 初始化 ====================

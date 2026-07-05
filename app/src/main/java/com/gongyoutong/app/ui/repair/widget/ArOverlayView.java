@@ -116,6 +116,7 @@ public class ArOverlayView extends View {
      */
     public void setRegions(List<FrameAnalysisResult.BoundingBox> regions) {
         this.regions = (regions != null) ? regions : new ArrayList<FrameAnalysisResult.BoundingBox>();
+        invalidate();
     }
 
     /**

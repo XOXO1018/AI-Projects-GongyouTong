@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 模拟派单服务
@@ -50,7 +51,7 @@ public class MockDispatcher {
     private static final double LNG_MAX = 116.70;
 
     private static final Random random = new Random();
-    private static int sequence = 0;
+    private static final AtomicInteger sequence = new AtomicInteger(0);
 
     /**
      * 生成模拟工单
@@ -61,8 +62,7 @@ public class MockDispatcher {
 
         // 工单编号：WO + YYYYMMDD + 4位序号
         String datePart = new SimpleDateFormat("yyyyMMdd", Locale.CHINA).format(new Date());
-        sequence++;
-        String seqPart = String.format(Locale.CHINA, "%04d", sequence);
+        String seqPart = String.format(Locale.CHINA, "%04d", sequence.incrementAndGet());
         entity.setOrderNo("WO" + datePart + seqPart);
 
         // 随机故障类型

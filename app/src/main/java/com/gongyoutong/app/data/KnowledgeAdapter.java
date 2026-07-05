@@ -11,12 +11,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.gongyoutong.app.R;
 import com.gongyoutong.app.database.KnowledgeEntity;
+import com.gongyoutong.app.utils.DateUtils;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * 知识库列表 Adapter
@@ -84,8 +83,7 @@ public class KnowledgeAdapter extends RecyclerView.Adapter<KnowledgeAdapter.View
         holder.tvCreatorName.setText(creator != null && !creator.isEmpty() ? creator : "工友通师傅");
 
         // 时间
-        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd HH:mm", Locale.CHINA);
-        holder.tvCreatedAt.setText(sdf.format(new Date(entity.getCreatedAt())));
+        holder.tvCreatedAt.setText(DateUtils.formatDisplayDateTime(new Date(entity.getCreatedAt())));
 
         // 点击
         holder.itemView.setOnClickListener(v -> {

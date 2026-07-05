@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.FormBody;
+import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -486,22 +488,25 @@ public class AiApiClient {
     public static String recognizeText(String base64Image) {
         try {
             String requestId = java.util.UUID.randomUUID().toString();
-            long systemTime = System.currentTimeMillis() / 1000;
-            String url = AiConfig.VIVO_OCR_URL
-                    + "?module=ocr"
-                    + "&request_id=" + requestId
-                    + "&system_time=" + systemTime;
+            String businessId = AiConfig.OCR_BUSINESS_ID_FULL;
 
-            JSONObject requestJson = new JSONObject();
-            requestJson.put("model", AiConfig.VIVO_OCR_MODEL);
-            requestJson.put("image", "data:image/jpeg;base64," + base64Image);
+            // 构建 query 参数
+            HttpUrl url = HttpUrl.parse(AiConfig.VIVO_OCR_URL).newBuilder()
+                    .addQueryParameter("requestId", requestId)
+                    .build();
 
-            RequestBody body = RequestBody.create(requestJson.toString(), JSON_TYPE);
+            // 构建 form-urlencoded body
+            RequestBody body = new FormBody.Builder()
+                    .add("image", base64Image)
+                    .add("pos", "0")
+                    .add("businessid", businessId)
+                    .build();
+
             Request request = new Request.Builder()
                     .url(url)
                     .post(body)
-                    .addHeader("Content-Type", "application/json")
                     .addHeader("Authorization", AiConfig.authHeader())
+                    .addHeader("Content-Type", "application/x-www-form-urlencoded")
                     .build();
 
             try (Response response = getHttpClient((int) AiConfig.OCR_TIMEOUT).newCall(request).execute()) {

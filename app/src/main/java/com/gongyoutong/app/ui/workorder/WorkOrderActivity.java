@@ -280,7 +280,9 @@ public class WorkOrderActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
         super.onDestroy();
-        if (executor != null) executor.shutdown();
     }
 }

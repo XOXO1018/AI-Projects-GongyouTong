@@ -765,8 +765,10 @@ public class WorkOrderDetailActivity extends AppCompatActivity {
                     new WorkOrderAiService.FaultPredictionCallback() {
                         @Override
                         public void onSuccess(String result) {
-                            tvAiPrediction.setText(result);
-                            pbAiPrediction.setVisibility(View.GONE);
+                            runOnUiThread(() -> {
+                                tvAiPrediction.setText(result);
+                                pbAiPrediction.setVisibility(View.GONE);
+                            });
                             executor.execute(() -> workOrderDao.updateAiPrediction(
                                     wo.getOrderNo(), result, System.currentTimeMillis()));
 
@@ -776,8 +778,10 @@ public class WorkOrderDetailActivity extends AppCompatActivity {
 
                         @Override
                         public void onError(String errorMessage) {
-                            tvAiPrediction.setText("AI 预判暂不可用");
-                            pbAiPrediction.setVisibility(View.GONE);
+                            runOnUiThread(() -> {
+                                tvAiPrediction.setText("AI 预判暂不可用");
+                                pbAiPrediction.setVisibility(View.GONE);
+                            });
                         }
                     });
         } else {
@@ -803,16 +807,20 @@ public class WorkOrderDetailActivity extends AppCompatActivity {
                     new WorkOrderAiService.ToolRecommendationCallback() {
                         @Override
                         public void onSuccess(String result) {
-                            tvAiTools.setText(result);
-                            pbAiTools.setVisibility(View.GONE);
+                            runOnUiThread(() -> {
+                                tvAiTools.setText(result);
+                                pbAiTools.setVisibility(View.GONE);
+                            });
                             executor.execute(() -> workOrderDao.updateAiTools(
                                     wo.getOrderNo(), result, System.currentTimeMillis()));
                         }
 
                         @Override
                         public void onError(String errorMessage) {
-                            tvAiTools.setText("AI 工具推荐暂不可用");
-                            pbAiTools.setVisibility(View.GONE);
+                            runOnUiThread(() -> {
+                                tvAiTools.setText("AI 工具推荐暂不可用");
+                                pbAiTools.setVisibility(View.GONE);
+                            });
                         }
                     });
         } else {
@@ -883,7 +891,9 @@ public class WorkOrderDetailActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+        }
         super.onDestroy();
-        if (executor != null) executor.shutdown();
     }
 }

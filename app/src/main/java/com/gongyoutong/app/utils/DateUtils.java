@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 日期工具类
@@ -12,27 +11,22 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class DateUtils {
 
-    // ========== 静态日期格式化器（线程安全）==========
-    private static final ConcurrentHashMap<String, SimpleDateFormat> FORMATTERS =
-            new ConcurrentHashMap<>();
-
-    private static final String FMT_TIME = "HH:mm";
-    private static final String FMT_DATE = "yyyy-MM-dd";
-    private static final String FMT_DATETIME = "yyyy-MM-dd HH:mm";
-    private static final String FMT_DISPLAY_DATE = "MM/dd HH:mm";
-    private static final String FMT_MONTH_DAY = "M月d日";
-    private static final String FMT_MONTH_DAY_TIME = "M月d日 HH:mm";
+    // ========== 线程安全的日期格式化器 ==========
+    private static final ThreadLocal<SimpleDateFormat> TIME_FORMATTER =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("HH:mm", Locale.CHINA));
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMATTER =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd", Locale.CHINA));
+    private static final ThreadLocal<SimpleDateFormat> DATETIME_FORMATTER =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA));
+    private static final ThreadLocal<SimpleDateFormat> DISPLAY_DATE_FORMATTER =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("MM/dd HH:mm", Locale.CHINA));
+    private static final ThreadLocal<SimpleDateFormat> MONTH_DAY_FORMATTER =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("M月d日", Locale.CHINA));
+    private static final ThreadLocal<SimpleDateFormat> MONTH_DAY_TIME_FORMATTER =
+            ThreadLocal.withInitial(() -> new SimpleDateFormat("M月d日 HH:mm", Locale.CHINA));
 
     private DateUtils() {
         // 私有构造函数，防止实例化
-    }
-
-    /**
-     * 获取日期格式化器（线程安全）
-     */
-    private static SimpleDateFormat getFormatter(String pattern) {
-        return FORMATTERS.computeIfAbsent(pattern,
-                k -> new SimpleDateFormat(pattern, Locale.CHINA));
     }
 
     // ========== 格式化方法 ==========
@@ -42,7 +36,7 @@ public final class DateUtils {
      */
     public static String formatTime(Date date) {
         if (date == null) return "--:--";
-        return getFormatter(FMT_TIME).format(date);
+        return TIME_FORMATTER.get().format(date);
     }
 
     /**
@@ -50,7 +44,7 @@ public final class DateUtils {
      */
     public static String formatDate(Date date) {
         if (date == null) return "";
-        return getFormatter(FMT_DATE).format(date);
+        return DATE_FORMATTER.get().format(date);
     }
 
     /**
@@ -58,7 +52,7 @@ public final class DateUtils {
      */
     public static String formatDateTime(Date date) {
         if (date == null) return "";
-        return getFormatter(FMT_DATETIME).format(date);
+        return DATETIME_FORMATTER.get().format(date);
     }
 
     /**
@@ -66,7 +60,7 @@ public final class DateUtils {
      */
     public static String formatDisplayDateTime(Date date) {
         if (date == null) return "时间待定";
-        return getFormatter(FMT_DISPLAY_DATE).format(date);
+        return DISPLAY_DATE_FORMATTER.get().format(date);
     }
 
     /**
@@ -74,7 +68,7 @@ public final class DateUtils {
      */
     public static String formatMonthDay(Date date) {
         if (date == null) return "";
-        return getFormatter(FMT_MONTH_DAY).format(date);
+        return MONTH_DAY_FORMATTER.get().format(date);
     }
 
     /**
@@ -82,7 +76,7 @@ public final class DateUtils {
      */
     public static String formatMonthDayTime(Date date) {
         if (date == null) return "时间待定";
-        return getFormatter(FMT_MONTH_DAY_TIME).format(date);
+        return MONTH_DAY_TIME_FORMATTER.get().format(date);
     }
 
     // ========== 日期比较方法 ==========

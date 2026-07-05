@@ -77,7 +77,10 @@ public class OnlineKnowledgeAdapter extends RecyclerView.Adapter<OnlineKnowledge
         // 添加到我的知识
         h.btnAdd.setOnClickListener(v -> {
             if (listener != null && !item.isAdded()) {
-                listener.onAddToLocal(item, h.getAdapterPosition());
+                int pos = h.getBindingAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    listener.onAddToLocal(item, pos);
+                }
             }
         });
     }
