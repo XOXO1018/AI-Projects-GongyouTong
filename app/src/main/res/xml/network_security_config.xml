@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- 允许明文 HTTP 流量用于本地开发 -->
-    <base-config cleartextTrafficPermitted="true">
+    <!-- 默认只允许 HTTPS -->
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
     
-    <!-- 允许 Ollama 本地服务器的明文 HTTP -->
+    <!-- 开发环境允许本地 HTTP（调试用） -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">10.50.80.97</domain>
         <domain includeSubdomains="true">localhost</domain>

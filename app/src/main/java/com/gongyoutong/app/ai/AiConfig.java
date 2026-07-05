@@ -84,9 +84,9 @@ public final class AiConfig {
 
     // ==================== #06 OCR 文字识别 ====================
     // 协议：自定义 REST（非 OpenAI 兼容）
-    // 访问地址：http://api-ai.vivo.com.cn/ocr/general_recognition
+    // 访问地址：https://api-ai.vivo.com.cn/ocr/general_recognition
     // 访问方式：POST (application/x-www-form-urlencoded)
-    public static final String VIVO_OCR_URL = "http://api-ai.vivo.com.cn/ocr/general_recognition";
+    public static final String VIVO_OCR_URL = "https://api-ai.vivo.com.cn/ocr/general_recognition";
     public static final long OCR_TIMEOUT = 15;  // 增加到15秒，支持大图片
     public static final int OCR_MAX_RETRY = 2;
     // businessid: 支持旋转/非正向文字
@@ -95,10 +95,10 @@ public final class AiConfig {
     public static final String OCR_BUSINESS_ID_FAST = "8bf312e702043779ad0f2760b37a0806";
 
     // ==================== #07 实时短语音识别 (ASR) — WebSocket 协议 ====================
-    // 连接地址：ws://api-ai.vivo.com.cn/asr/v2
+    // 连接地址：wss://api-ai.vivo.com.cn/asr/v2
     // 协议：WebSocket v2
     // 音频参数：PCM 16kHz 16bit 单声道
-    public static final String VIVO_ASR_WS_URL = "ws://api-ai.vivo.com.cn/asr/v2";
+    public static final String VIVO_ASR_WS_URL = "wss://api-ai.vivo.com.cn/asr/v2";
     public static final String VIVO_ASR_ENGINE_ID = "shortasrinput";
     public static final String VIVO_ASR_USER_ID = "2addc42b7ae689dfdf1c63e220df52a2";
 
