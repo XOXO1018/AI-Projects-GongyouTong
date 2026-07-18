@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <!-- 路线示意 -->
+    <path
+        android:pathData="M20,180 Q20,100 100,100 T180,20"
+        android:strokeColor="#27AE60"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="@android:color/transparent" />
+    <!-- 终点标记 -->
+    <path
+        android:pathData="M170,10 L180,20 L170,30 L160,20 Z"
+        android:fillColor="#F97316" />
+</vector>

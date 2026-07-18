@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main"
+    android:fitsSystemWindows="true">
+
+    <!-- 百度地图视图: 铺满整个屏幕 -->
+    <com.baidu.mapapi.map.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- 顶部标题栏: 浮在地图上方 -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="@color/primary"
+        app:navigationIcon="@drawable/ic_back_white"
+        app:navigationIconTint="@color/white"
+        app:title="行程导航"
+        app:titleTextColor="@color/white"
+        app:titleCentered="true" />
+
+    <!-- 目的地名称: 显示在标题下方 -->
+    <TextView
+        android:id="@+id/tvNavSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="36dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingHorizontal="60dp"
+        android:shadowColor="#8000"
+        android:shadowDx="1"
+        android:shadowDy="1"
+        android:shadowRadius="2"
+        android:textColor="@color/white"
+        android:textSize="13sp"
+        tools:text="桂林市象山区维也纳国际酒店" />
+
+    <!-- Re-center FAB - 左下角 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabRecenter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="340dp"
+        android:contentDescription="重新定位"
+        android:src="@drawable/ic_location"
+        app:backgroundTint="@color/white"
+        app:elevation="4dp"
+        app:fabSize="mini"
+        app:tint="@color/primary" />
+
+    <!-- 底部导航信息面板 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/navInfoCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="@color/nav_card">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="12dp">
+
+            <!-- Turn Instruction Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/ivTurnIcon"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_turn_right"
+                    android:padding="8dp"
+                    android:background="@drawable/bg_turn_icon" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
+                    <TextView
+                        android:id="@+id/tvTurnInstruction"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="正在规划路线..."
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvNextTurn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="请稍候"
+                        android:textColor="@color/nav_subtext"
+                        android:textSize="12sp"
+                        android:layout_marginTop="2dp" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvRemaining"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--"
+                    android:textColor="@color/primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/nav_divider"
+                android:layout_marginVertical="12dp" />
+
+            <!-- Progress Bar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <View
+                    android:id="@+id/progressFill"
+                    android:layout_width="0dp"
+                    android:layout_height="6dp"
+                    android:layout_weight="0"
+                    android:background="@color/primary" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="6dp"
+                    android:layout_weight="10"
+                    android:background="@color/nav_divider" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="已行驶 0 km，还剩 -- km"
+                android:textColor="@color/nav_subtext"
+                android:textSize="13sp" />
+
+            <!-- Info Grid Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="12dp">
+
+                <!-- ETA -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="预计到达"
+                        android:textColor="@color/nav_subtext"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tvEta"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--:--"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="2dp" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="40dp"
+                    android:background="@color/nav_divider" />
+
+                <!-- Remaining Time -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="剩余时间"
+                        android:textColor="@color/nav_subtext"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tvRemainingTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="-- 分钟"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="2dp" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="40dp"
+                    android:background="@color/nav_divider" />
+
+                <!-- Speed -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="当前时速"
+                        android:textColor="@color/nav_subtext"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tvSpeed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 km/h"
+                        android:textColor="@color/text_primary"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="2dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Action Buttons Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="14dp"
+                android:gravity="center_vertical">
+
+                <!-- Report Button -->
+                <LinearLayout
+                    android:id="@+id/btnReport"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/bg_nav_icon_btn"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_report"
+                        app:tint="@color/white"
+                        android:contentDescription="上报" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="上报"
+                        android:textColor="@color/nav_subtext"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp" />
+
+                </LinearLayout>
+
+                <!-- Report Issue Button -->
+                <LinearLayout
+                    android:id="@+id/btnReportIssue"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:background="@drawable/bg_nav_icon_btn"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_tools"
+                        app:tint="@color/white"
+                        android:contentDescription="问题" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="问题"
+                        android:textColor="@color/nav_subtext"
+                        android:textSize="10sp"
+                        android:layout_marginTop="2dp" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <!-- Arrived Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnArrived"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:minWidth="120dp"
+                    android:text="我已到达"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:backgroundTint="@color/nav_success"
+                    app:cornerRadius="22dp"
+                    app:icon="@drawable/ic_check"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp" />
+
+                <!-- Start Navigation Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnStartNav"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="120dp"
+                    android:text="开始导航"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textAllCaps="false"
+                    android:backgroundTint="@color/primary"
+                    android:enabled="false"
+                    app:cornerRadius="22dp"
+                    app:icon="@drawable/ic_navigation"
+                    app:iconGravity="textStart"
+                    app:iconPadding="6dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>

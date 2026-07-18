@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 导航图标 - 指南针/罗盘 -->
+    <path
+        android:fillColor="#F97316"
+        android:pathData="M12,2L4.5,20.29l0.71,0.71L12,18l6.79,3 0.71,-0.71z"/>
+    <path
+        android:fillColor="#FF9A5A"
+        android:pathData="M12,6L9,9l3,6 3,-6z"/>
+</vector>

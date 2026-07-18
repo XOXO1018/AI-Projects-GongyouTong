@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- === 工友通 v3 夜间主题 — 暖调深灰+亮橙 · 柔化质感 === -->
+    <style name="Theme.GongyouTong" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent_orange</item>
+        <item name="colorPrimaryDark">@color/primary</item>
+        <item name="colorPrimaryContainer">#2A1F14</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnPrimaryContainer">@color/primary_300</item>
+
+        <item name="colorSecondary">@color/accent_green</item>
+        <item name="colorSecondaryContainer">#0A2A20</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorOnSecondaryContainer">#5EEAD4</item>
+
+        <item name="colorTertiary">@color/accent_blue</item>
+        <item name="colorTertiaryContainer">#1A2740</item>
+        <item name="colorOnTertiary">@color/white</item>
+
+        <item name="android:colorBackground">@color/dark_background</item>
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorSurfaceVariant">@color/dark_surface_variant</item>
+        <item name="colorOnSurface">@color/dark_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/dark_text_secondary</item>
+
+        <item name="android:statusBarColor">@color/dark_background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+
+        <item name="android:navigationBarColor">@color/dark_nav_bar_bg</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+
+        <item name="colorError">@color/accent_red</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">#3D1515</item>
+
+        <item name="colorOutline">@color/dark_divider</item>
+        <item name="colorOutlineVariant">@color/dark_divider_subtle</item>
+
+        <item name="colorControlHighlight">@color/primary_10</item>
+
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="v">true</item>
+    </style>
+
+    <style name="Theme.GongyouTong.Navigation" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent_orange</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:colorBackground">@color/dark_background</item>
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorOnSurface">@color/dark_text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/dark_text_secondary</item>
+        <item name="android:statusBarColor">@color/dark_background</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <item name="android:navigationBarColor">@color/dark_nav_bar_bg</item>
+        <item name="colorOutline">@color/dark_divider</item>
+        <item name="colorControlHighlight">@color/primary_10</item>
+    </style>
+</resources>

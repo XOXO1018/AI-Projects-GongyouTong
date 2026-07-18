@@ -1,0 +1,25 @@
+# 工友通 (GongyouTong) — Cursor 项目规则
+
+## 项目信息
+- Android 原生应用（Java），包名 com.gongyoutong.app
+- minSdk 24, targetSdk 35, Java 17 (compile JDK 24)
+- 技术栈：AppCompatActivity + Room + 百度地图 SDK + OkHttp + Material Design 3 + CameraX
+- AI：vivo 蓝心大模型系列（LLM/TTS/OCR/Vision/ImageGen/ASR）
+
+## 编码规范
+- Java 代码，中文注释
+- AI 服务类：单例模式（DCL），OkHttp + executor + mainHandler 回调
+- 布局：Material Design 3 组件，ConstraintLayout 为主
+- Config 常量统一在 Config.java 管理
+
+## 项目结构
+- Java 源码：app/src/main/java/com/gongyoutong/app/
+- AI 服务：ai/ (VivoAiService, WorkOrderAiService, VivoAsrService, VivoTtsService, VivoOcrService, VisionAnalysisService, RepairLlmService, ImageGenerationService)
+- 维修模块：repair/ (RepairStateMachine, ErrorDetector, VoiceInteractionManager, KnowledgeBaseService, RepairStep 等数据类)
+- UI：ui/repair/ (RepairActivity, VideoRepairActivity, widget/ArOverlayView)
+- 数据库：database/ (AppDatabase, 各类 Entity/DAO)
+
+## 构建
+- JDK：C:\Users\30742\.jdks\openjdk-24.0.2
+- Android SDK：D:\AndroidstdioSDK
+- 签名密钥：项目根目录 GongyouTong 文件

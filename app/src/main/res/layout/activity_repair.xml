@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main"
+    android:fitsSystemWindows="true">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/toolbar_background">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/ic_back"
+            app:navigationIconTint="@color/text_primary"
+            app:title="@string/repair_title"
+            app:titleTextColor="@color/text_primary" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <!-- 可滚动内容区 -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- 工单号显示 -->
+                <TextView
+                    android:id="@+id/tvWorkOrderNo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    tools:text="工单号：WO20250101001" />
+
+                <!-- 故障输入区 -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilFaultDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:hint="@string/repair_fault_hint"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="500"
+                    app:endIconMode="custom">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etFaultDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine"
+                        android:maxLength="500"
+                        android:textSize="14sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 语音输入按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnVoice"
+                    style="@style/Widget.Material3.Button.TonalButton.Icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/repair_voice_input"
+                    android:textSize="12sp"
+                    app:icon="@android:drawable/ic_btn_speak_now"
+                    app:iconGravity="textStart"
+                    app:iconSize="16dp" />
+
+                <!-- 照片区 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/repair_photos_label"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvPhotos"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                        tools:itemCount="3"
+                        tools:listitem="@layout/item_photo_thumbnail" />
+
+                    <!-- 拍照按钮 -->
+                    <ImageButton
+                        android:id="@+id/btnTakePhoto"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_photo_add_button"
+                        android:contentDescription="@string/repair_take_photo"
+                        android:src="@android:drawable/ic_menu_camera"
+                        android:tint="@color/text_hint"
+                        app:backgroundTint="@null" />
+
+                </LinearLayout>
+
+                <!-- AI 诊断按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDiagnose"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/repair_start_diagnosis"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/primary"
+                    app:cornerRadius="12dp"
+                    app:icon="@android:drawable/ic_dialog_info"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp" />
+
+                <!-- Loading 区 -->
+                <LinearLayout
+                    android:id="@+id/layoutLoading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ProgressBar
+                        android:id="@+id/pbDiagnosis"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:indeterminate="true"
+                        android:indeterminateTint="@color/primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/repair_diagnosing"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <!-- AI 图片生成按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGenerateImages"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/repair_generate_images"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/primary"
+                    app:cornerRadius="12dp"
+                    app:icon="@android:drawable/ic_menu_gallery"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp" />
+
+                <!-- AI 视频维修按钮 -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnVideoRepair"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="12dp"
+                    android:text="🎥 AI 视频维修指导"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/primary"
+                    app:cornerRadius="12dp"
+                    app:icon="@android:drawable/ic_menu_camera"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp" />
+
+                <!-- 图片生成 Loading -->
+                <LinearLayout
+                    android:id="@+id/layoutImageGenLoading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ProgressBar
+                        android:id="@+id/pbImageGen"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginEnd="8dp"
+                        android:indeterminate="true"
+                        android:indeterminateTint="@color/primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/repair_generating_images"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <!-- 图片生成结果区 -->
+                <LinearLayout
+                    android:id="@+id/layoutImageGenResult"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/repair_generated_images_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <!-- 动态添加 ImageView -->
+
+                </LinearLayout>
+
+                <!-- 诊断结果区 -->
+                <LinearLayout
+                    android:id="@+id/layoutDiagnosisResult"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <!-- 故障原因 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardFaultCauses"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline"
+                        app:strokeWidth="1dp">
+
+                        <include layout="@layout/item_diagnosis_section" />
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 排查步骤 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardInspectionSteps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:id="@+id/layoutInspectionSteps"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="12dp">
+
+                            <!-- 标题行 -->
+                            <LinearLayout
+                                android:id="@+id/layoutStepsHeader"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:drawableStart="@android:drawable/ic_menu_agenda"
+                                    android:drawablePadding="8dp"
+                                    android:text="@string/repair_section_inspection_steps"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold" />
+
+                                <ImageView
+                                    android:id="@+id/ivStepsExpand"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:src="@android:drawable/arrow_up_float"
+                                    android:tint="@color/text_hint" />
+
+                            </LinearLayout>
+
+                            <!-- 步骤内容区（CheckBox 列表容器） -->
+                            <LinearLayout
+                                android:id="@+id/layoutStepsContent"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:orientation="vertical" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 安全提示 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardSafetyTips"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/risk_medium"
+                        app:strokeWidth="1dp">
+
+                        <include layout="@layout/item_diagnosis_section" />
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 所需工具 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardRequiredTools"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline"
+                        app:strokeWidth="1dp">
+
+                        <include layout="@layout/item_diagnosis_section" />
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 可能配件 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardRequiredParts"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline"
+                        app:strokeWidth="1dp">
+
+                        <include layout="@layout/item_diagnosis_section" />
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- 时间预估 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/cardEstimatedTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="1dp"
+                        app:strokeColor="@color/outline"
+                        app:strokeWidth="1dp">
+
+                        <include layout="@layout/item_diagnosis_section" />
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- 底部固定操作栏 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/card_background"
+            android:elevation="8dp"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRediagnose"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="@string/repair_rediagnose"
+                android:textSize="14sp"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/primary" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCompleteRepair"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="@string/repair_complete"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/primary"
+                app:cornerRadius="12dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

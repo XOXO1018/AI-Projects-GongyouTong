@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 工友通 Logo - 扳手+齿轮组合图标 -->
+    <group android:translateX="27" android:translateY="27">
+        <!-- 外圆背景 -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M27,3C14.3,3 4,13.3 4,26s10.3,23 23,23 23,-10.3 23,-23S39.7,3 27,3z"/>
+        <!-- 扳手 -->
+        <path
+            android:fillColor="#F97316"
+            android:pathData="M33.5,12.5c-2.8,-2.8 -7.2,-2.8 -10,0l-4,4c-2.8,2.8 -2.8,7.2 0,10l-7,7 3,3 7,-7c2.8,2.8 7.2,2.8 10,0l4,-4c2.8,-2.8 2.8,-7.2 0,-10zM31,24l-4,4c-1.5,1.5 -3.9,1.5 -5.4,0 -1.5,-1.5 -1.5,-3.9 0,-5.4l4,-4c1.5,-1.5 3.9,-1.5 5.4,0 1.5,1.5 1.5,3.9 0,5.4z"/>
+        <!-- 齿轮小装饰 -->
+        <path
+            android:fillColor="#FF9A5A"
+            android:pathData="M38,34l-1.5,-1.5c-0.3,-0.9 -0.8,-1.7 -1.5,-2.3l0,-2l-2,-1l-1.8,0.9c-0.9,-0.3 -1.8,-0.5 -2.7,-0.5L27.5,27l-1.5,1.5 0.9,1.6c-0.3,0.9 -0.5,1.8 -0.5,2.7L25.5,34l1,2l2,0c0.6,0.7 1.4,1.2 2.3,1.5L32.5,39l1.5,-1.5l-0.9,-1.7c0.3,-0.9 0.5,-1.8 0.5,-2.7L36,32.5l2,-1z"/>
+    </group>
+</vector>

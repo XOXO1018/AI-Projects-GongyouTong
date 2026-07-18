@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true">
+
+    <!-- CameraX 预览区域（全屏背景） -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/layoutGuidePanel" />
+
+    <!-- AR 叠加层（与 PreviewView 同尺寸同位置） -->
+    <com.gongyoutong.app.ui.repair.widget.ArOverlayView
+        android:id="@+id/arOverlayView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="@id/previewView"
+        app:layout_constraintBottom_toBottomOf="@id/previewView"
+        app:layout_constraintStart_toStartOf="@id/previewView"
+        app:layout_constraintEnd_toEndOf="@id/previewView" />
+
+    <!-- 顶部状态条 -->
+    <LinearLayout
+        android:id="@+id/layoutTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:minHeight="56dp"
+        android:paddingStart="12dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        android:background="#80000000"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnCloseVideoRepair"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="退出视频维修"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:tint="#FFFFFF" />
+
+        <View
+            android:layout_width="8dp"
+            android:layout_height="0dp" />
+
+        <TextView
+            android:id="@+id/tvRecordStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/video_repair_recording"
+            android:textColor="@color/error"
+            android:textSize="12sp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/tvDeviceInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <View
+            android:layout_width="8dp"
+            android:layout_height="0dp" />
+
+        <TextView
+            android:id="@+id/tvJoyAiStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VL: --"
+            android:textColor="#80FFFFFF"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- 底部引导面板 -->
+    <LinearLayout
+        android:id="@+id/layoutGuidePanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#E6000000"
+        android:padding="12dp"
+        app:layout_constraintBottom_toTopOf="@id/layoutStepNav">
+
+        <TextView
+            android:id="@+id/tvGuideText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:text="请将摄像头对准设备铭牌" />
+    </LinearLayout>
+
+    <!-- 步骤导航条 -->
+    <LinearLayout
+        android:id="@+id/layoutStepNav"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:background="@color/card_background"
+        app:layout_constraintBottom_toTopOf="@id/layoutBottomBar">
+
+        <ImageButton
+            android:id="@+id/btnPrevStep"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@android:drawable/ic_media_previous"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video_repair_step_previous" />
+
+        <TextView
+            android:id="@+id/tvStepProgress"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="1/7"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary" />
+
+        <ImageButton
+            android:id="@+id/btnSkipStep"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@android:drawable/ic_media_next"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video_repair_step_skip" />
+    </LinearLayout>
+
+    <!-- 底部操作栏 -->
+    <LinearLayout
+        android:id="@+id/layoutBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:background="@color/card_background"
+        android:elevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageButton
+            android:id="@+id/btnTtsToggle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_lock_silent_mode_off"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="TTS" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnVoiceInput"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="12dp"
+            android:text="@string/video_repair_hold_talk"
+            app:cornerRadius="24dp" />
+
+        <ImageButton
+            android:id="@+id/btnTakePhoto"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_camera"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video_repair_take_photo" />
+
+        <ImageButton
+            android:id="@+id/btnGenerateVideo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_media_play"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/video_repair_generate_video" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

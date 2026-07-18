@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="14dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="@color/card_background"
+    app:strokeWidth="0dp"
+    app:rippleColor="@color/primary_10">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <!-- 左侧状态强调条 -->
+        <View
+            android:id="@+id/colorBar"
+            android:layout_width="5dp"
+            android:layout_height="match_parent"
+            android:minHeight="72dp"
+            android:background="@drawable/bg_status_bar_accent" />
+
+        <!-- 时间列 -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="14dp"
+            android:minWidth="72dp">
+
+            <TextView
+                android:id="@+id/tvTimeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="10:00"
+                android:textSize="21sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary"
+                tools:text="10:00" />
+
+            <TextView
+                android:id="@+id/tvTimePeriod"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="上午"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginStart="4dp" />
+
+        </LinearLayout>
+
+        <!-- 分隔线 -->
+        <View
+            android:layout_width="1dp"
+            android:layout_height="56dp"
+            android:background="@color/divider_subtle"
+            android:layout_marginHorizontal="8dp" />
+
+        <!-- 内容信息 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- 标题和状态 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvTaskTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="幸福小区安装热水器"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="幸福小区安装热水器" />
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="待出发"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="5dp"
+                    android:background="@drawable/bg_status_badge_pending"
+                    android:textColor="@color/status_pending_text"
+                    tools:text="待出发" />
+
+            </LinearLayout>
+
+            <!-- 工作类型 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="10dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_work_tools"
+                    android:scaleType="centerInside"
+                    app:tint="@color/primary" />
+
+                <TextView
+                    android:id="@+id/tvWorkType"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="热水器安装"
+                    android:textColor="@color/primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- 日期、时间和位置 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="10dp">
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_time"
+                    app:tint="@color/text_tertiary" />
+
+                <TextView
+                    android:id="@+id/tvTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="今天 10:00"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="12dp"
+                    android:background="@color/divider"
+                    android:layout_marginHorizontal="12dp" />
+
+                <ImageView
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_location"
+                    app:tint="@color/text_tertiary" />
+
+                <TextView
+                    android:id="@+id/tvAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="幸福小区 A栋301"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 箭头图标 -->
+        <ImageView
+            android:id="@+id/ivArrow"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_chevron_right"
+            android:layout_marginStart="10dp"
+            app:tint="@color/gray_400"
+            android:alpha="0.5"
+            android:contentDescription="进入" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

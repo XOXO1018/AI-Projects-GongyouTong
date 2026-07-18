@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  joyai-vl:
+    build: .
+    container_name: joyai-vl-interaction
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - ADAPTER_PORT=8070
+      - MAIN_GPU=0
+      - SUMMARY_GPU=0
+    ports:
+      - "8070:8070"
+      - "8099:8099"
+    volumes:
+      # 挂载模型目录（避免重复下载）
+      - /tmp/models:/tmp/models
+      # 挂载配置（可选）
+      - ./.env:/app/.env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
