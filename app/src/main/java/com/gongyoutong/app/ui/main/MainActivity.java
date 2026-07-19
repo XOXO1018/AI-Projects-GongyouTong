@@ -248,13 +248,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnImage.setOnClickListener(v -> handleImageGeneration());
 
-        cardVideoRepair.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, VideoRepairActivity.class);
-            intent.putExtra("demo_mode", false);
-            intent.putExtra("device_model", "家用空调");
-            intent.putExtra("fault_description", "制冷效果差，出风口有异响");
-            startActivity(intent);
-        });
+        cardVideoRepair.setOnClickListener(v -> showVideoRepairModeDialog());
 
         etInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -279,6 +273,21 @@ public class MainActivity extends AppCompatActivity {
         });
 
         chatInputCard.setOnClickListener(v -> etInput.requestFocus());
+    }
+
+    private void showVideoRepairModeDialog() {
+        String[] modes = {"真实 AI 视频分析", "Demo 演示模式"};
+        new AlertDialog.Builder(this)
+                .setTitle("选择 AI 视频维修模式")
+                .setItems(modes, (dialog, which) -> {
+                    boolean demoMode = which == 1;
+                    Intent intent = new Intent(MainActivity.this, VideoRepairActivity.class);
+                    intent.putExtra("demo_mode", demoMode);
+                    intent.putExtra("device_model", "家用空调");
+                    intent.putExtra("fault_description", "制冷效果差，出风口有异响");
+                    startActivity(intent);
+                })
+                .show();
     }
 
     private void setupBackHandler() {
