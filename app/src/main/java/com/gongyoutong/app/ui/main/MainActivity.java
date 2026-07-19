@@ -250,7 +250,7 @@ public class MainActivity extends AppCompatActivity {
 
         cardVideoRepair.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, VideoRepairActivity.class);
-            intent.putExtra("demo_mode", true);
+            intent.putExtra("demo_mode", false);
             intent.putExtra("device_model", "家用空调");
             intent.putExtra("fault_description", "制冷效果差，出风口有异响");
             startActivity(intent);

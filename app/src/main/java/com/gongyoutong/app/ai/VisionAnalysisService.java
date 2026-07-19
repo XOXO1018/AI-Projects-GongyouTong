@@ -103,11 +103,19 @@ public class VisionAnalysisService {
 
                 // 文本部分
                 StringBuilder textBuilder = new StringBuilder();
-                textBuilder.append("请分析这张维修现场照片。");
+                textBuilder.append("请分析这张维修现场照片，并作为维修师傅给出下一步指导。");
                 if (context != null && !context.isEmpty()) {
                     textBuilder.append(" 当前上下文：").append(context);
                 }
-                textBuilder.append(" 请描述你所看到的场景，如果检测到特定物体或区域，请注明其位置。");
+                textBuilder.append(" 必须只返回 JSON，不要添加 markdown 或解释。格式如下：");
+                textBuilder.append("{\"deviceType\":\"设备类型或未知设备\",");
+                textBuilder.append("\"faultGuess\":\"可能故障\",");
+                textBuilder.append("\"currentStep\":\"当前应该做什么\",");
+                textBuilder.append("\"safetyWarning\":\"安全提醒，没有则为空字符串\",");
+                textBuilder.append("\"nextAction\":\"下一步动作\",");
+                textBuilder.append("\"confidence\":0.0,");
+                textBuilder.append("\"regions\":[{\"x\":0.1,\"y\":0.2,\"width\":0.3,\"height\":0.2,\"label\":\"故障区域\",\"confidence\":0.8}]}。");
+                textBuilder.append(" regions 使用 0 到 1 的归一化坐标；无法判断坐标时返回空数组。");
 
                 JSONObject textPart = new JSONObject();
                 textPart.put("type", "text");
@@ -232,9 +240,33 @@ public class VisionAnalysisService {
         try {
             JSONObject json = new JSONObject(jsonPart);
 
-            // 如果有 description 字段，使用它
+            String deviceType = json.optString("deviceType", "");
+            String faultGuess = json.optString("faultGuess", "");
+            String currentStep = json.optString("currentStep", "");
+            String safetyWarning = json.optString("safetyWarning", "");
+            String nextAction = json.optString("nextAction", "");
+
             String description = json.optString("description", "");
-            if (!description.isEmpty()) {
+            if (!deviceType.isEmpty() || !faultGuess.isEmpty()
+                    || !currentStep.isEmpty() || !nextAction.isEmpty()) {
+                StringBuilder formatted = new StringBuilder();
+                if (!deviceType.isEmpty()) {
+                    formatted.append("设备：").append(deviceType);
+                }
+                if (!faultGuess.isEmpty()) {
+                    appendLine(formatted, "可能故障：", faultGuess);
+                }
+                if (!currentStep.isEmpty()) {
+                    appendLine(formatted, "当前步骤：", currentStep);
+                }
+                if (!safetyWarning.isEmpty()) {
+                    appendLine(formatted, "安全提醒：", safetyWarning);
+                }
+                if (!nextAction.isEmpty()) {
+                    appendLine(formatted, "下一步：", nextAction);
+                }
+                result.setDescription(formatted.toString());
+            } else if (!description.isEmpty()) {
                 result.setDescription(description);
             }
 
@@ -273,6 +305,13 @@ public class VisionAnalysisService {
         }
 
         return result;
+    }
+
+    private void appendLine(StringBuilder builder, String label, String value) {
+        if (builder.length() > 0) {
+            builder.append("\n");
+        }
+        builder.append(label).append(value);
     }
 
     /**

@@ -116,6 +116,7 @@ public class VideoRepairActivity extends AppCompatActivity
     private final Handler demoHandler = new Handler(Looper.getMainLooper());
     private int demoStepIndex = 0;
     private String lastSpokenDemoText = "";
+    private String lastSpokenVisionText = "";
 
     private final String[][] demoGuides = new String[][]{
             {"家用空调", "制冷效果差，出风口有异响", "请先断开空调电源，确认插头已拔下", "安全提醒：未断电前不要拆开外壳", "断电后检查滤网和出风口"},
@@ -186,8 +187,10 @@ public class VideoRepairActivity extends AppCompatActivity
                 }
             });
         } else {
-            tvJoyAiStatus.setText("VL: OFF");
-            tvJoyAiStatus.setTextColor(0x80FFFFFF);
+            tvJoyAiStatus.setText("VISION");
+            tvJoyAiStatus.setTextColor(0xFF4CAF50);
+            tvRecordStatus.setText("AI 分析中");
+            tvGuideText.setText("请将摄像头对准设备，AI 将每 2-3 秒分析一次画面");
         }
     }
 
@@ -585,7 +588,6 @@ public class VideoRepairActivity extends AppCompatActivity
 
             RepairState state = stateMachine.getCurrentState();
 
-            // ========== JoyAI-VL 实时主动指导（独立通道） ==========
             if (joyAiVlService.isEnabled() && joyAiVlService.isSessionActive()) {
                 // 根据当前状态设置用户查询上下文
                 updateJoyAiQuery(state);
@@ -622,73 +624,107 @@ public class VideoRepairActivity extends AppCompatActivity
                 });
             }
 
-            // ========== 本地分析（降级方案，保留原有逻辑） ==========
-            if (state == RepairState.DEVICE_IDENTIFY) {
-                // 设备识别阶段：跑 OCR 提取铭牌文字
-                ocrService.recognize(base64, new VivoOcrService.OcrCallback() {
-                    @Override
-                    public void onSuccess(String ocrText) {
-                        isProcessing.set(false);
-                        if (ocrText != null && !ocrText.isEmpty()) {
-                            runOnUiThread(() -> onDeviceIdentified(ocrText));
-                        }
-                    }
-
-                    @Override
-                    public void onError(String msg) {
-                        isProcessing.set(false);
-                        Log.w(TAG, "OCR 识别失败: " + msg);
-                    }
-                });
-
-            } else if (state == RepairState.STEP_GUIDE || state == RepairState.ACTION_VERIFY) {
-                // 步骤引导 / 动作验证阶段：跑 Vision 分析
-                RepairStep step = stateMachine.getCurrentStep();
-                String context = (step != null)
-                        ? step.getDescription()
-                        : "分析当前维修场景";
-                visionService.analyze(base64, context, new VisionAnalysisService.VisionCallback() {
-                    @Override
-                    public void onSuccess(String description,
-                                          List<FrameAnalysisResult.BoundingBox> regions,
-                                          float confidence) {
-                        isProcessing.set(false);
-                        runOnUiThread(() -> {
-                            arOverlayView.setRegions(regions);
-                            arOverlayView.invalidate();
-                        });
-
-                        // 错误检测
-                        RepairStep currentStep = stateMachine.getCurrentStep();
-                        FrameAnalysisResult result = new FrameAnalysisResult();
-                        result.setDescription(description);
-                        // Bug #1 fix: 填充检测信息供 ErrorDetector 使用
-                        result.setSafetyPowerOff(isSafetyConfirmed(description, currentStep));
-                        result.setVisionDetectedAction(extractActionKeyword(description, currentStep));
-                        result.setVisionDetectedTool(extractToolKeyword(description, currentStep));
-                        List<ErrorDetector.ErrorType> errors =
-                                errorDetector.detect(result, currentStep);
-                        if (!errors.isEmpty()) {
-                            runOnUiThread(() -> onErrorDetected(errors));
-                        }
-                    }
-
-                    @Override
-                    public void onError(String msg) {
-                        isProcessing.set(false);
-                        Log.w(TAG, "Vision 分析失败: " + msg);
-                    }
-                });
-
-            } else {
-                isProcessing.set(false);
-            }
+            runRealVisionAnalysis(base64);
         } catch (Exception e) {
             Log.e(TAG, "帧分析异常: " + e.getMessage());
             isProcessing.set(false);
         } finally {
             imageProxy.close();
         }
+    }
+
+    /** 调用真实视觉模型分析当前手机相机画面，并更新 Overlay、文字和语音。 */
+    private void runRealVisionAnalysis(String base64) {
+        String context = buildVisionContext();
+        runOnUiThread(() -> tvRecordStatus.setText("AI 分析中"));
+
+        visionService.analyze(base64, context, new VisionAnalysisService.VisionCallback() {
+            @Override
+            public void onSuccess(String description,
+                                  List<FrameAnalysisResult.BoundingBox> regions,
+                                  float confidence) {
+                isProcessing.set(false);
+                runOnUiThread(() -> applyVisionGuidance(description, regions, confidence));
+            }
+
+            @Override
+            public void onError(String msg) {
+                isProcessing.set(false);
+                Log.w(TAG, "Vision 分析失败: " + msg);
+                runOnUiThread(() -> {
+                    tvRecordStatus.setText("AI 暂不可用");
+                    tvGuideText.setText("视觉模型分析失败：" + msg + "\n请检查网络或 API Key，也可以从首页切换 Demo 模式演示。");
+                    arOverlayView.setGuideText("视觉分析失败，请稍后重试");
+                    arOverlayView.setWarning(null);
+                });
+            }
+        });
+    }
+
+    private String buildVisionContext() {
+        StringBuilder context = new StringBuilder();
+        context.append("这是工友通 AI 视频维修指导页面。");
+        if (!deviceModel.isEmpty()) {
+            context.append(" 已知设备：").append(deviceModel).append("。");
+        }
+        if (!faultDescription.isEmpty()) {
+            context.append(" 用户描述故障：").append(faultDescription).append("。");
+        }
+        RepairStep step = stateMachine.getCurrentStep();
+        if (step != null) {
+            context.append(" 当前维修步骤：").append(step.getTitle())
+                    .append("，").append(step.getDescription()).append("。");
+        }
+        context.append(" 请从画面判断设备类型、疑似故障区域、安全风险和下一步操作。");
+        return context.toString();
+    }
+
+    private void applyVisionGuidance(String description,
+                                     List<FrameAnalysisResult.BoundingBox> regions,
+                                     float confidence) {
+        String safeDescription = description != null && !description.trim().isEmpty()
+                ? description.trim()
+                : "AI 已收到画面，但没有返回明确指导。";
+
+        String detectedDevice = extractFieldFromGuidance(safeDescription, "设备：");
+        if (!detectedDevice.isEmpty() && !"未知设备".equals(detectedDevice)) {
+            deviceModel = detectedDevice;
+            tvDeviceInfo.setText(detectedDevice);
+        }
+
+        String currentStep = extractFieldFromGuidance(safeDescription, "当前步骤：");
+        String safetyWarning = extractFieldFromGuidance(safeDescription, "安全提醒：");
+        String nextAction = extractFieldFromGuidance(safeDescription, "下一步：");
+        String overlayText = !currentStep.isEmpty()
+                ? currentStep
+                : (!nextAction.isEmpty() ? nextAction : safeDescription);
+
+        tvRecordStatus.setText("AI 置信度 " + Math.round(confidence * 100) + "%");
+        tvGuideText.setText(safeDescription);
+        arOverlayView.setRegions(regions);
+        arOverlayView.setGuideText(overlayText);
+        arOverlayView.setWarning(safetyWarning.isEmpty() ? null : safetyWarning);
+
+        if (ttsEnabled && !overlayText.equals(lastSpokenVisionText)) {
+            lastSpokenVisionText = overlayText;
+            String speech = safetyWarning.isEmpty()
+                    ? overlayText
+                    : "安全提醒，" + safetyWarning + "。" + overlayText;
+            voiceManager.speak(speech);
+        }
+    }
+
+    private String extractFieldFromGuidance(String text, String label) {
+        int start = text.indexOf(label);
+        if (start < 0) {
+            return "";
+        }
+        start += label.length();
+        int end = text.indexOf("\n", start);
+        if (end < 0) {
+            end = text.length();
+        }
+        return text.substring(start, end).trim();
     }
 
     /**

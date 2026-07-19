@@ -35,7 +35,7 @@ public class Config {
     public static final String EXTRA_DIAGNOSIS_ID = "extra_diagnosis_id"; // 诊断记录ID Extra Key
 
     // ========== CameraX 配置 ==========
-    public static final int CAMERA_FRAME_INTERVAL_MS = 1000;       // 帧捕获间隔 1秒
+    public static final int CAMERA_FRAME_INTERVAL_MS = 2500;       // 帧捕获间隔 2.5秒
     public static final int CAMERA_FRAME_MAX_WIDTH = 640;          // 帧缩放最大宽度
     public static final int CAMERA_FRAME_QUALITY = 70;             // JPEG 压缩质量
 }
